@@ -1,0 +1,23 @@
+{
+	"compilerOptions": {
+		"target": "es6",
+		"strict": true,
+		"module": "commonjs",
+		"moduleResolution": "node",
+		"allowSyntheticDefaultImports": true,
+		"jsx": "preserve",
+		"importHelpers": true,
+		"alwaysStrict": true,
+		"sourceMap": true,
+		"forceConsistentCasingInFileNames": true,
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitReturns": true,
+		"noImplicitAny": false,
+		"noImplicitThis": false,
+		"noUnusedLocals": false,
+		"strictNullChecks": false,
+		"declaration": true,
+		"outDir": "build"
+	},
+	"include": ["src/**/*"]
+}
