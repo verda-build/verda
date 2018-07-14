@@ -6,13 +6,13 @@ import { Bddy2Config } from "../edsl/config";
 
 const {
 	resolver,
-	rule: { task, variable },
+	rule: { task, oracle },
 	macro: { FileListUpdated }
 } = createSandbox(new Bddy2Config());
 
 // BEGIN BUILD SCRIPT
 const dir = `payloads/nested`;
-variable("content-updated").def(FileListUpdated({ under: dir, pattern: "**/*.txt" }));
+oracle("content-updated").def(FileListUpdated({ under: dir, pattern: "**/*.txt" }));
 task("start").def(async target => {
 	await target.need("content-updated");
 	triggeredRebuild = true;

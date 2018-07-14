@@ -35,7 +35,7 @@ export function createResolverBindings(resolver: BuildResolver, config: Bddy2Con
 		rule: {
 			task: RuleStub(resolver, Task),
 			file: RuleStub(resolver, File),
-			variable: RuleStub(resolver, Variable),
+			oracle: RuleStub(resolver, Variable),
 			phony: RuleStub(resolver, Phony)
 		},
 

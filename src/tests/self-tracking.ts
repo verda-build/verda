@@ -6,15 +6,15 @@ import { Bddy2Config } from "../edsl/config";
 
 const {
 	resolver,
-	rule: { task, variable },
+	rule: { task, oracle },
 	macro: { FileListUpdated }
 } = createSandbox(new Bddy2Config());
 
 // BEGIN BUILD SCRIPT
 const dir1 = `payloads/self-tracking-1`;
 const dir2 = `payloads/self-tracking-2`;
-variable("dir1-changed").def(FileListUpdated({ under: dir1 }));
-variable("dir2-changed").def(FileListUpdated({ under: dir2 }));
+oracle("dir1-changed").def(FileListUpdated({ under: dir1 }));
+oracle("dir2-changed").def(FileListUpdated({ under: dir2 }));
 task("start").def(async target => {
 	await target.need("dir1-changed");
 	triggeredRebuild = true;

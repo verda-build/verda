@@ -5,7 +5,7 @@ import { wait } from "../test-helper";
 
 const {
 	resolver,
-	rule: { task, variable }
+	rule: { task, oracle }
 } = createSandbox(new Bddy2Config());
 
 task("start").def(async target => {
@@ -33,7 +33,7 @@ task("d1").def(async target => {
 	await target.need("d2");
 	triggeredRebuild++;
 });
-variable("d2").def(async target => target.trackModification(1));
+oracle("d2").def(async () => 1);
 
 let triggeredRebuild = 0;
 async function rebuild() {
