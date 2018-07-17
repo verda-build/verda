@@ -80,10 +80,9 @@ export class Runner {
 		try {
 			if (selfTracking.volatile) await this.resolver.want(selfTracking);
 			await this.resolver.want(start);
-			if (selfTracking) {
-				this.resolver.setImplicitDependency("user", selfTracking);
-			}
+			if (selfTracking) this.resolver.setImplicitDependency("user", selfTracking);
 		} catch (e) {
+			if (selfTracking) this.resolver.setImplicitDependency("user", selfTracking);
 			this.reporter.end(true);
 			throw e;
 		}

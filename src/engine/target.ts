@@ -151,7 +151,7 @@ export default class Target implements ITargetInfo {
 			implicitDependencies: [...this.implicitDependencies].map(x => x.id),
 			updated: this.updated.toISOString(),
 			lastReturnedSameTrack: false,
-			lastReturned: void 0
+			lastReturned: null
 		};
 		if (this._returned === this._tracked) {
 			o.lastReturnedSameTrack = true;
