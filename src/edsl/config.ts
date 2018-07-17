@@ -5,7 +5,14 @@ import { Resource, ResourceLock } from "../engine/resource";
 import { Reporter } from "../reporter";
 import { QuietReporter } from "../reporter/quiet";
 
-export class Bddy2Config implements ActionEnv {
+export interface IExternalOptions {
+	rulePath?: string;
+	cwd?: string;
+	jCmd?: number;
+	verbosity?: number;
+}
+
+export class VerdaConfig implements ActionEnv {
 	rulePath: string = "";
 	ruleDir: string = "";
 	cd: string = process.cwd();
@@ -13,11 +20,13 @@ export class Bddy2Config implements ActionEnv {
 	journal: string = "";
 	objectives: string[] = [];
 	jCmd: number = 0;
+	verbosity: number = 2;
 	reporter: Reporter = new QuietReporter();
 
-	constructor(rulePath?: string, cwd?: string) {
-		this.reset(rulePath, cwd);
-		this.jCmd = os.cpus().length;
+	constructor(options: IExternalOptions) {
+		this.reset(options.rulePath, options.cwd);
+		this.jCmd = options.jCmd || os.cpus().length;
+		this.verbosity = options.verbosity >= 0 ? options.verbosity : 2;
 	}
 	reset(rulePath?: string, cwd?: string) {
 		if (rulePath) {

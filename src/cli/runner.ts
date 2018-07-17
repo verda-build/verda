@@ -1,6 +1,6 @@
 import * as fs from "fs-extra";
 import { createSandbox } from "../edsl";
-import { Bddy2Config } from "../edsl/config";
+import { VerdaConfig } from "../edsl/config";
 import { Phony } from "../edsl/rule/phony";
 import { Task } from "../edsl/rule/task";
 import BuildResolver from "../engine/resolver";
@@ -10,13 +10,13 @@ import ConsoleReporter from "../reporter/console";
 
 export class Runner {
 	private reporter: Reporter = null;
-	private config: Bddy2Config = null;
+	private config: VerdaConfig = null;
 	private resolver: BuildResolver = null;
 	private sandbox: ReturnType<typeof createSandbox> = null;
 
-	configure(config: Bddy2Config) {
+	configure(config: VerdaConfig) {
 		this.config = config;
-		this.reporter = new ConsoleReporter(2);
+		this.reporter = new ConsoleReporter(this.config.verbosity);
 		this.sandbox = createSandbox(config);
 		this.resolver = this.sandbox.resolver;
 		this.config.reporter = this.reporter;

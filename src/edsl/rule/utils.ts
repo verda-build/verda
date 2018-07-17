@@ -1,22 +1,19 @@
-import * as path from "path";
 import * as fs from "fs-extra";
-import { ITargetExec } from "../../engine/interfaces";
+import { ITargetExec, ITargetPath } from "../../engine/interfaces";
+import ParsedPath from "../../engine/parse-path";
+
+export class FileStatInfo extends ParsedPath implements ITargetPath {
+	readonly updated: string;
+	constructor(s: string, updated: Date) {
+		super(s);
+		this.updated = updated.toISOString();
+	}
+}
 
 export async function pathParseAndUpdate(s: string) {
-	const pp = path.parse(s);
-	const stat = (await fs.stat(s)).mtime;
-	const updated = stat.toISOString();
-	const r = {
-		path: s,
-		root: pp.root,
-		dir: pp.dir,
-		name: pp.name,
-		ext: pp.ext,
-		base: pp.base,
-		updated
-	};
-
-	return r;
+	if (!(await fs.pathExists(s))) return null;
+	const updated = (await fs.stat(s)).mtime;
+	return new FileStatInfo(s, updated);
 }
 
 export function fileIsUpdated(last: { updated: string }, x: { updated: string }) {

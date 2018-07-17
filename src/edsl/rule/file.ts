@@ -11,6 +11,7 @@ export class File extends UserRule implements Rule {
 	async exec(target: ITargetExec, ...m: string[]) {
 		await super.exec(target, ...m);
 		const u = await pathParseAndUpdate(target.id);
+		if (!u) return u;
 		target.is.updatedAt(new Date(u.updated));
 		return target.trackModification(u, fileIsUpdated);
 	}

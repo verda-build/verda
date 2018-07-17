@@ -123,7 +123,7 @@ export default class ConsoleReporter implements Reporter {
 			for (let k = 0; k < line.length; k++) {
 				const term = line[k];
 				let segText = style.escape(term, j, k).replace(/[\r\n]+/g, " ");
-				if (lengthSofar + segText.length > len) {
+				if (lengthSofar + segText.length >= len) {
 					const remainingLength = len - lengthSofar - style.trail.length;
 					if (remainingLength > 0) {
 						const segText1 = segText.slice(0, remainingLength);

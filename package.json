@@ -27,8 +27,8 @@
 		"clean": "rimraf coverage build tmp",
 		"build": "tsc -p tsconfig.json",
 		"watch": "tsc -w -p tsconfig.json",
-    "test": "ava --verbose",
-    "prepack":"npm run clean && tsc -p tsconfig.release.json"
+		"test": "ava --verbose",
+		"prepack": "npm run clean && tsc -p tsconfig.release.json"
 	},
 	"author": "Renzhi Li aka Belleve Invis<belleve@typeof.net>",
 	"license": "APLv2",
@@ -49,8 +49,8 @@
 			"build/**/tests/*.js",
 			"build/**/test.js"
 		]
-  },
-  "bin": {
-    "verda":"build/cli/verda.js"
-  }
+	},
+	"bin": {
+		"verda": "build/cli/verda.js"
+	}
 }

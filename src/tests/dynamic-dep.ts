@@ -1,13 +1,13 @@
 import test from "ava";
 import * as fs from "fs-extra";
 import { createSandbox } from "../edsl";
-import { Bddy2Config } from "../edsl/config";
+import { VerdaConfig } from "../edsl/config";
 import { tamper, wait } from "../test-helper";
 
 const {
 	resolver,
 	rule: { task }
-} = createSandbox(new Bddy2Config());
+} = createSandbox(new VerdaConfig({}));
 
 task("start").def(async target => {
 	const list = "payloads/dynamic/list.txt";

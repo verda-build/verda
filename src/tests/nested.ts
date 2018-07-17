@@ -2,13 +2,13 @@ import test from "ava";
 import { wait, tamper } from "../test-helper";
 import * as fs from "fs-extra";
 import { createSandbox } from "../edsl";
-import { Bddy2Config } from "../edsl/config";
+import { VerdaConfig } from "../edsl/config";
 
 const {
 	resolver,
 	rule: { task, oracle },
 	macro: { FileListUpdated }
-} = createSandbox(new Bddy2Config());
+} = createSandbox(new VerdaConfig({}));
 
 // BEGIN BUILD SCRIPT
 const dir = `payloads/nested`;

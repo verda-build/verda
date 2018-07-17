@@ -1,11 +1,12 @@
 import BuildResolver from "../engine/resolver";
 import { MatchFunction, Rule } from "../engine/rule";
-import { Bddy2Config } from "./config";
+import { VerdaConfig } from "./config";
 import { File } from "./rule/file";
 import { Phony } from "./rule/phony";
 import { Task } from "./rule/task";
 import { Variable } from "./rule/variable";
 import { FileList, FileListUpdated } from "./execs/file-list";
+import { Intermediate } from "./rule/intermediate";
 
 function RuleStub<T extends Rule>(
 	resolver: BuildResolver,
@@ -19,7 +20,7 @@ function RuleStub<T extends Rule>(
 }
 
 // Rule definition and resolution bindings
-export function createResolverBindings(resolver: BuildResolver, config: Bddy2Config) {
+export function createResolverBindings(resolver: BuildResolver, config: VerdaConfig) {
 	return {
 		want(...targets: string[]) {
 			for (const target of targets) config.objectives.push(target);
@@ -36,7 +37,8 @@ export function createResolverBindings(resolver: BuildResolver, config: Bddy2Con
 			task: RuleStub(resolver, Task),
 			file: RuleStub(resolver, File),
 			oracle: RuleStub(resolver, Variable),
-			phony: RuleStub(resolver, Phony)
+			phony: RuleStub(resolver, Phony),
+			intermediate: RuleStub(resolver, Intermediate)
 		},
 
 		// Predefined Execs

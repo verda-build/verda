@@ -10,6 +10,7 @@ import {
 import Target from "./target";
 import * as equal from "fast-deep-equal";
 import { Rule } from "./rule";
+import ParsedPath from "./parse-path";
 
 export type RuleCandidate = { rule: Rule; m: string[] };
 
@@ -55,16 +56,18 @@ export class ETargetProxy implements ITargetExec {
 	private target: Target;
 	private resolver: IResolver<Target>;
 	is: ITargetIs;
-
-	// Clear the runningDependencies for new session
-	static clear(resolver: IResolver<Target>) {
-		runningDependencies.set(resolver, new WeakMap());
-	}
+	readonly path: ParsedPath;
 
 	constructor(target: Target, resolver: IResolver<Target>) {
 		this.target = target;
 		this.resolver = resolver;
 		this.is = new TargetIs(target);
+		this.path = new ParsedPath(target.id);
+	}
+
+	// Clear the runningDependencies for new session
+	static clear(resolver: IResolver<Target>) {
+		runningDependencies.set(resolver, new WeakMap());
 	}
 
 	// EDSL directives
@@ -72,7 +75,10 @@ export class ETargetProxy implements ITargetExec {
 		return this.target.id;
 	}
 	toString() {
-		return this.target.id;
+		return this.path.full;
+	}
+	toJSON() {
+		return this.path.full;
 	}
 	get tracking() {
 		return this.target.tracking;
@@ -187,7 +193,6 @@ export class MCTargetProxy implements ITargetCheckModification {
 	private resolver: IResolver<Target>;
 	private ruleCandidate: RuleCandidate;
 	private anyModified = false;
-
 	constructor(target: Target, resolver: IResolver<Target>, rc: RuleCandidate) {
 		this.target = target;
 		this.resolver = resolver;

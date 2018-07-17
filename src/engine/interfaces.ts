@@ -32,9 +32,20 @@ export interface ITargetInfo {
 	readonly updated: Date;
 }
 
+export interface ITargetPath {
+	readonly prefix: string;
+	readonly full: string;
+	readonly root: string;
+	readonly dir: string;
+	readonly name: string;
+	readonly ext: string;
+	readonly base: string;
+}
+
 export interface ITargetExec {
 	readonly id: string;
 	is: ITargetIs;
+	path: ITargetPath;
 
 	// Tracking
 	readonly tracking: any;

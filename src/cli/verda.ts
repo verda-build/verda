@@ -4,13 +4,14 @@ import { searchConfig } from "./search-config";
 import * as de from "../default-env";
 
 const argv = yargs.argv;
-
+let suppressOutput = false;
 const { cwd, config: rulePath } = searchConfig(argv.r, argv.f, "verdafile.js");
 
 process.chdir(cwd);
 process.once("SIGINT", () => process.exit(1)).once("SIGTERM", () => process.exit(1));
 
 main(rulePath).catch(e => {
+	if (!suppressOutput) console.error(e);
 	process.exit(1);
 });
 
@@ -35,10 +36,10 @@ async function main(rulePath: string) {
 
 	await verda.runner.loadJournal();
 	try {
+		suppressOutput = true;
 		await verda.runner.build(start, selfTracking);
+		suppressOutput = false;
 	} finally {
-		try {
-			await verda.runner.saveJournal();
-		} catch (e) {}
+		await verda.runner.saveJournal();
 	}
 }

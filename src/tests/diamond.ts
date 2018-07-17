@@ -1,12 +1,12 @@
 import test from "ava";
 import { createSandbox } from "../edsl";
-import { Bddy2Config } from "../edsl/config";
+import { VerdaConfig } from "../edsl/config";
 import { wait } from "../test-helper";
 
 const {
 	resolver,
 	rule: { task, oracle }
-} = createSandbox(new Bddy2Config());
+} = createSandbox(new VerdaConfig({}));
 
 task("start").def(async target => {
 	await target.need("b", "c");
