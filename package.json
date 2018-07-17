@@ -1,6 +1,6 @@
 {
 	"name": "verda",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Build Directly.",
 	"engineStrict": true,
 	"engines": {
@@ -50,6 +50,6 @@
 		]
 	},
 	"bin": {
-		"verda": "build/cli/verda.js"
+		"verda": "bin/verda"
 	}
 }
