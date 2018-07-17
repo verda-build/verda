@@ -13,9 +13,9 @@ export class SelfTracking extends UserRule implements Rule {
 		return r;
 	}
 	async checkModified(target: ITargetCheckModification, ...m: string[]) {
-		const u = target.volatile || (await target.dependencyModified());
-		if (u) await target.cutoffEarly();
-		return u;
+		const ud = target.volatile || (await target.dependencyModified());
+		if (ud) await target.cutoffEarly();
+		return ud;
 	}
 	async shouldTriggerModify(
 		itselfModified: boolean,
