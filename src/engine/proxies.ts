@@ -87,10 +87,8 @@ export class ETargetProxy implements ITargetExec {
 		return this.target.track(x);
 	}
 	trackModification(x, compare = equal) {
-		if (!compare(this.tracking, x)) {
-			this.track(x);
-			this.is.modified();
-		}
+		if (!compare(this.tracking, x)) this.is.modified();
+		this.track(x);
 		return x;
 	}
 

@@ -2,7 +2,7 @@ import * as fs from "fs-extra";
 import { createSandbox } from "../edsl";
 import { VerdaConfig } from "../edsl/config";
 import { Phony } from "../edsl/rule/phony";
-import { Task } from "../edsl/rule/task";
+import { SelfTracking } from "../edsl/rule/self-tracking";
 import BuildResolver from "../engine/resolver";
 import Target from "../engine/target";
 import { Reporter } from "../reporter";
@@ -49,10 +49,16 @@ export class Runner {
 		const selfTrackingRule = this.resolver.getRule(selfTracking);
 		if (!selfTrackingRule) {
 			this.resolver.defineRule(
-				new Task("self-tracking", s => (s === selfTracking.id ? [s] : null)).def(
+				new SelfTracking("self-tracking", s => (s === selfTracking.id ? [s] : null)).def(
 					async target => {
 						await target.need(trackingID);
 					}
+				)
+			);
+		} else {
+			this.resolver.defineRule(
+				new SelfTracking("self-tracking", s => (s === selfTracking.id ? [s] : null)).def(
+					selfTrackingRule.rule.exec
 				)
 			);
 		}
@@ -72,9 +78,9 @@ export class Runner {
 
 	async build(start: Target, selfTracking?: Target) {
 		try {
+			if (selfTracking.volatile) await this.resolver.want(selfTracking);
 			await this.resolver.want(start);
 			if (selfTracking) {
-				await this.resolver.want(selfTracking);
 				this.resolver.setImplicitDependency("user", selfTracking);
 			}
 		} catch (e) {

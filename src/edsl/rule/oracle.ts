@@ -2,7 +2,7 @@ import { ITargetCheckModification, ITargetExec } from "../../engine/interfaces";
 import { MatchFunction, Rule } from "../../engine/rule";
 import { UserRule } from "./rule-base";
 
-export class Variable extends UserRule implements Rule {
+export class Oracle extends UserRule implements Rule {
 	constructor(kind: string, pattern: string | MatchFunction) {
 		super(kind, pattern);
 	}
@@ -12,9 +12,9 @@ export class Variable extends UserRule implements Rule {
 		return ret;
 	}
 	async checkModified(target: ITargetCheckModification, ...m: string[]) {
-		return (
-			target.volatile || (await target.dependencyModified()) || (await target.cutoffEarly())
-		);
+		if (target.volatile) return true;
+		await target.dependencyModified();
+		return await target.cutoffEarly();
 	}
 	async shouldTriggerModify(itselfModified: boolean) {
 		return itselfModified;

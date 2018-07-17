@@ -4,12 +4,12 @@ import { MatchFunction, Rule } from "../engine/rule";
 import { PatternMatch } from "../match";
 import { RuleBase } from "./rule/rule-base";
 import { fileIsUpdated, pathParseAndUpdate, checkUpdateRecursiveDir } from "./rule/utils";
-import { Variable } from "./rule/variable";
+import { Oracle } from "./rule/oracle";
 
-export const dirContent = new Variable("dir-content", "dir-content:***").def((target, $1) =>
+export const dirContent = new Oracle("dir-content", "dir-content:***").def((target, $1) =>
 	checkUpdateRecursiveDir(false, target, $1, "dir-content")
 );
-export const dirStructure = new Variable("dir-structure", "dir-structure:***").def((target, $1) =>
+export const dirStructure = new Oracle("dir-structure", "dir-structure:***").def((target, $1) =>
 	checkUpdateRecursiveDir(true, target, $1, "dir-structure")
 );
 
@@ -21,7 +21,11 @@ export class FileUpdated extends RuleBase implements Rule {
 		if (await fs.pathExists($1)) {
 			const u = await pathParseAndUpdate($1);
 			target.is.updatedAt(new Date(u.updated));
-			return target.trackModification(u, fileIsUpdated);
+			if (target.tracking !== u.updated) {
+				target.is.modified();
+				target.track(u.updated);
+			}
+			return u;
 		} else {
 			throw new Error("Dependent file not found: " + $1);
 		}

@@ -4,7 +4,7 @@ import { VerdaConfig } from "./config";
 import { File } from "./rule/file";
 import { Phony } from "./rule/phony";
 import { Task } from "./rule/task";
-import { Variable } from "./rule/variable";
+import { Oracle } from "./rule/oracle";
 import { FileList, FileListUpdated } from "./execs/file-list";
 import { Intermediate } from "./rule/intermediate";
 
@@ -36,7 +36,7 @@ export function createResolverBindings(resolver: BuildResolver, config: VerdaCon
 		rule: {
 			task: RuleStub(resolver, Task),
 			file: RuleStub(resolver, File),
-			oracle: RuleStub(resolver, Variable),
+			oracle: RuleStub(resolver, Oracle),
 			phony: RuleStub(resolver, Phony),
 			intermediate: RuleStub(resolver, Intermediate)
 		},

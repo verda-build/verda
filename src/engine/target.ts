@@ -142,22 +142,33 @@ export default class Target implements ITargetInfo {
 
 	// JSON import and export
 	toJson() {
-		return {
+		const o = {
 			id: this.id,
 			builtKind: this.builtKind,
 			volatile: this.volatile,
 			tracking: this._tracked,
-			lastReturned: this._returned,
 			dependencies: this.dependencies.map(t => [...t].map(x => x.id)),
 			implicitDependencies: [...this.implicitDependencies].map(x => x.id),
-			updated: this.updated.toISOString()
+			updated: this.updated.toISOString(),
+			lastReturnedSameTrack: false,
+			lastReturned: void 0
 		};
+		if (this._returned === this._tracked) {
+			o.lastReturnedSameTrack = true;
+		} else {
+			o.lastReturned = this._returned;
+		}
+		return o;
 	}
 	fromJson(j, resolver: IResolver<Target>) {
 		this.builtKind = j.builtKind;
 		this.volatile = j.volatile;
 		this._tracked = j.tracking;
-		this._returned = j.lastReturned;
+		if (j.lastReturnedSameTrack) {
+			this._returned = this._tracked;
+		} else {
+			this._returned = j.lastReturned;
+		}
 		this.dependencies = j.dependencies.map(
 			g => new Set(g.map(targetID => resolver.query(targetID)))
 		);

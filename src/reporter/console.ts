@@ -14,24 +14,18 @@ export default class ConsoleReporter implements Reporter {
 	private level: number;
 	private spinner: ReturnType<typeof ora>;
 	private columns: number;
-	private prefix: string;
-	private stylizedPrefix: string;
 	private activeTargets: Set<string> = new Set();
 	private finishedTargets: Set<string> = new Set();
 	private reportedErrors: Set<Error> = new Set();
 
-	constructor(level: number, parent?: ConsoleReporter, _source?: string) {
+	constructor(level: number, parent?: ConsoleReporter) {
 		this.level = level;
-		const source = _source || "Verda";
 		if (!parent) {
 			this.spinner = ora("Building");
-			this.prefix = "[" + source + "] ›";
 		} else {
 			this.spinner = parent.spinner;
-			this.prefix = parent.prefix + " [" + source + "] ›";
 		}
-		this.stylizedPrefix = chalk.gray(this.prefix);
-		this.columns = (process.stdout.columns || 80) - 3 - this.prefix.length;
+		this.columns = (process.stdout.columns || 80) - 2;
 	}
 
 	start() {
@@ -102,11 +96,7 @@ export default class ConsoleReporter implements Reporter {
 	}
 
 	private directive(color: string, symbol: string, word: string) {
-		return (
-			this.stylizedPrefix +
-			" " +
-			chalk[color](symbol + (word ? " " + chalk.underline.bold(word) : ""))
-		);
+		return chalk[color](symbol + (word ? " " + chalk.underline.bold(word) : ""));
 	}
 
 	private extractFirstLine(lines: any[][], len: number, style: ActionLogHighlighter) {
@@ -186,7 +176,7 @@ export default class ConsoleReporter implements Reporter {
 	}
 	echo(...line: any[]) {
 		if (this.level > 3) return;
-		this.directiveLogging(this.stylizedPrefix, "", ...line);
+		this.directiveLogging("", "", ...line);
 	}
 	note(...line: any[]) {
 		if (this.level > 3) return;
