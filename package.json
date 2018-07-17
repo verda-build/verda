@@ -1,6 +1,5 @@
 {
 	"name": "verda",
-	"private": true,
 	"version": "0.1.0",
 	"description": "Build Directly.",
 	"engineStrict": true,
