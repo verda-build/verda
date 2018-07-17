@@ -20,7 +20,7 @@ export const commandStylizer: ActionLogHighlighter = {
 			? /[ ']/.test(term)
 				? "'" + term.replace(/[\\']/g, "\\$&") + "'"
 				: term
-			: util.inspect(term);
+			: util.inspect(term) || "";
 	},
 	stylize(term: any, lineNo: number, termNo: number, text: string, slicedText: string): string {
 		if (termNo === -1) return chalk.cyanBright(slicedText);
@@ -39,7 +39,7 @@ export const jsCallStyle: ActionLogHighlighter = {
 		return "";
 	},
 	escape(term: any, lineNo: number, termNo: number) {
-		return JSON.stringify(term);
+		return JSON.stringify(term) || "";
 	},
 	stylize(term: any, lineNo: number, termNo: number, text: string, slicedText: string): string {
 		if (termNo === 0) return chalk.blue.underline(slicedText);
