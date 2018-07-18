@@ -91,6 +91,7 @@ export class Runner {
 
 	async saveJournal() {
 		if (!this.config.journal) return;
+		await fs.ensureFile(this.config.journal);
 		await fs.writeFile(this.config.journal, JSON.stringify(this.resolver.toJson(), null, "\t"));
 	}
 }
