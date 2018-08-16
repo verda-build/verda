@@ -145,7 +145,9 @@ export default class Target implements ITargetInfo {
 		const o = {
 			id: this.id,
 			builtKind: this.builtKind,
-			volatile: this.volatile,
+			volatile:
+				(this.status !== BuildStatus.NOT_STARTED && this.status !== BuildStatus.FINISHED) ||
+				this.volatile,
 			tracking: this._tracked,
 			dependencies: this.dependencies.map(t => [...t].map(x => x.id)),
 			implicitDependencies: [...this.implicitDependencies].map(x => x.id),
