@@ -1,7 +1,7 @@
 import * as yargs from "yargs";
 import posixifyPath from "../match/posixify-path";
 import { searchConfig } from "./search-config";
-import * as de from "../default-env";
+import * as path from "path";
 
 const argv = yargs.argv;
 let suppressOutput = false;
@@ -17,14 +17,26 @@ main(rulePath).catch(e => {
 
 // The main building process
 async function main(rulePath: string) {
+	// We resolve DE and Verda Instance's path by relative to rule file's
+	// It would fix some rare case of casing bugs.
+	const rulePathDir = path.dirname(rulePath);
+	const relativeDefaultEnvPath = path.relative(
+		rulePathDir,
+		path.resolve(__dirname, "../default-env.js")
+	);
+	const relativeVerdaPath = path.relative(rulePathDir, path.resolve(__dirname, "../index.js"));
+	const absoluteDefaultEnvPath = path.join(rulePathDir, relativeDefaultEnvPath);
+	const absoluteVerdaPath = path.join(rulePathDir, relativeVerdaPath);
+
+	const de = await import(absoluteDefaultEnvPath);
 	de.setEnv(rulePath, cwd, argv);
-	const verda = await import("..");
+	const verda = await import(absoluteVerdaPath);
 
 	// Import the rule
 	const m = await import(rulePath);
 
 	if (m instanceof Function) {
-		const r = m();
+		const r = m(verda, argv, cwd, rulePath);
 		if (r instanceof Promise) await r;
 	}
 
