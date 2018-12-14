@@ -1,6 +1,6 @@
 import posixifyPath from "./posixify-path";
 
-function escapeRegExp(str) {
+function escapeRegExp(str: string) {
 	return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 }
 
@@ -98,7 +98,7 @@ export function globToRegex(str: string) {
 	return new RegExp(reStr);
 }
 
-export function PatternMatch(pattern) {
+export function PatternMatch(pattern: string) {
 	const regex = globToRegex(pattern);
 	return function(s: string) {
 		const posixPath = posixifyPath(s);

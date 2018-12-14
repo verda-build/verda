@@ -1,6 +1,6 @@
 import { ChildProcess, spawn } from "child_process";
 import * as which from "which";
-import { ResourceLock } from "../engine/resource";
+import { ResourceLock, Resource } from "../engine/resource";
 import { Reporter } from "../reporter";
 import { ActionEnv, DeepArray } from "./interfaces";
 
@@ -21,8 +21,8 @@ export function flattenArgList(args: DeepArray<any>): string[] {
 export interface ProcessActionOptions {
 	cwd: string;
 	interactive?: boolean;
-	env?: any;
-	reporter?: Reporter;
+	env: any;
+	reporter: Reporter;
 }
 
 export interface ProcessExitStatus {
@@ -71,7 +71,7 @@ function startPipeline(
 
 export class ProcessPipePromise implements PromiseLike<ProcessExitStatus> {
 	private pendingCommands: string[][] = [];
-	private p: Promise<ProcessExitStatus> = null;
+	private p: Promise<ProcessExitStatus>;
 	constructor(resource: ResourceLock, options: ProcessActionOptions) {
 		this.p = resource.exec(() => startPipeline(this.pendingCommands, options));
 	}
@@ -91,7 +91,7 @@ export class ProcessPipePromise implements PromiseLike<ProcessExitStatus> {
 }
 
 export function createKit_Command(ce: ActionEnv, Resource: () => ResourceLock) {
-	let resource = null;
+	let resource: ResourceLock | null = null;
 
 	function startCommand(
 		commandLine: DeepArray<any>,

@@ -2,9 +2,9 @@ import * as fs from "fs-extra";
 import { ITargetCheckModification, ITargetExec, ITargetInfo } from "../engine/interfaces";
 import { MatchFunction, Rule } from "../engine/rule";
 import { PatternMatch } from "../match";
-import { RuleBase } from "./rule/rule-base";
-import { fileIsUpdated, pathParseAndUpdate, checkUpdateRecursiveDir } from "./rule/utils";
 import { Oracle } from "./rule/oracle";
+import { RuleBase } from "./rule/rule-base";
+import { checkUpdateRecursiveDir, pathParseAndUpdate } from "./rule/utils";
 
 export const dirContent = new Oracle("dir-content", "dir-content:***").def((target, $1) =>
 	checkUpdateRecursiveDir(false, target, $1, "dir-content")
@@ -20,6 +20,7 @@ export class FileUpdated extends RuleBase implements Rule {
 	async exec(target: ITargetExec, $1: string) {
 		if (await fs.pathExists($1)) {
 			const u = await pathParseAndUpdate($1);
+			if (!u) return u;
 			target.is.updatedAt(new Date(u.updated));
 			if (target.tracking !== u.updated) {
 				target.is.modified();
@@ -30,7 +31,7 @@ export class FileUpdated extends RuleBase implements Rule {
 			throw new Error("Dependent file not found: " + $1);
 		}
 	}
-	async checkModified(target: ITargetCheckModification, $1) {
+	async checkModified(target: ITargetCheckModification, $1: string) {
 		return target.volatile || !(await fs.pathExists($1)) || (await target.cutoffEarly());
 	}
 	async shouldTriggerModify(
@@ -42,9 +43,8 @@ export class FileUpdated extends RuleBase implements Rule {
 	}
 }
 
-export const fileUpdated = new FileUpdated(
-	"file-updated",
-	s => (/^[a-zA-z0-9\+\.\-]{2,}?:/.test(s) ? null : [s])
+export const fileUpdated = new FileUpdated("file-updated", s =>
+	/^[a-zA-z0-9\+\.\-]{2,}?:/.test(s) ? null : [s]
 );
 export const fileUpdatedExplicit = new FileUpdated(
 	"file-updated",
@@ -62,7 +62,7 @@ export class FileExists extends RuleBase implements Rule {
 			throw new Error("Dependent file not found: " + $1);
 		}
 	}
-	async checkModified(target: ITargetCheckModification, $1) {
+	async checkModified(target: ITargetCheckModification, $1: string) {
 		return !(await fs.pathExists($1));
 	}
 	async shouldTriggerModify(itselfModified: boolean) {
@@ -78,7 +78,7 @@ export class DirExists extends RuleBase implements Rule {
 		if (!(await fs.pathExists($1))) await fs.ensureDir($1);
 		return pathParseAndUpdate($1);
 	}
-	async checkModified(target: ITargetCheckModification, $1) {
+	async checkModified(target: ITargetCheckModification, $1: string) {
 		return !(await fs.pathExists($1));
 	}
 	async shouldTriggerModify(itselfModified: boolean) {

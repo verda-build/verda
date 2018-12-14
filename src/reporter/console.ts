@@ -51,7 +51,7 @@ export default class ConsoleReporter implements Reporter {
 		this.spinner.stopAndPersist();
 	}
 
-	targetStart(id, kind) {
+	targetStart(id: string, kind: string) {
 		if (this.activeTargets.has(id) || this.finishedTargets.has(id) || kind !== "user") return;
 		this.info("Start building", id);
 		this.activeTargets.add(id);
@@ -60,8 +60,8 @@ export default class ConsoleReporter implements Reporter {
 				this.activeTargets.size}.`
 		);
 	}
-	targetSkip(id, kind) {}
-	targetEnd(id) {
+	targetSkip(id: string, kind: string) {}
+	targetEnd(id: string) {
 		if (!this.activeTargets.has(id)) return;
 		this.info("Finish building", id);
 		this.activeTargets.delete(id);
@@ -71,7 +71,7 @@ export default class ConsoleReporter implements Reporter {
 				this.activeTargets.size}.`
 		);
 	}
-	targetError(id, err) {
+	targetError(id: string, err: Error) {
 		if (this.reportedErrors.has(err)) return;
 		this.error(`Unhandled exception when building "${id}":\n`, chalk.gray(util.inspect(err)));
 		this.reportedErrors.add(err);
@@ -96,7 +96,7 @@ export default class ConsoleReporter implements Reporter {
 	}
 
 	private directive(color: string, symbol: string, word: string) {
-		return chalk[color](symbol + (word ? " " + chalk.underline.bold(word) : ""));
+		return (chalk as any)[color](symbol + (word ? " " + chalk.underline.bold(word) : ""));
 	}
 
 	private extractFirstLine(lines: any[][], len: number, style: ActionLogHighlighter) {
@@ -146,14 +146,14 @@ export default class ConsoleReporter implements Reporter {
 		if (this.level > 2) return;
 		this.rawLog(
 			this.directive("blue", "♦", ""),
-			this.extractFirstLine(commands, this.columns, this.getStyle(style))
+			this.extractFirstLine(commands, this.columns, this.getStyle(style || ""))
 		);
 	}
 
 	// Directive logging
 	private directiveLogging(directive: string, color: string, ...args: any[]) {
 		const [prefix, postfix] = color
-			? chalk[color]("<<##BEGIN##>>").split("<<##BEGIN##>>")
+			? (chalk as any)[color]("<<##BEGIN##>>").split("<<##BEGIN##>>")
 			: ["", ""];
 		this.beforeOutput();
 		if (directive) {

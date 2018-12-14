@@ -2,15 +2,15 @@ import { ActionEnv } from "./interfaces";
 
 export interface EchoFunction {
 	(...args: any[]): void;
-	debug(...line: any[]);
-	info(...line: any[]);
-	echo(...line: any[]);
-	warn(...line: any[]);
-	note(...line: any[]);
-	success(...line: any[]);
-	fail(...line: any[]);
-	error(...line: any[]);
-	fatal(...line: any[]);
+	debug(...line: any[]): void;
+	info(...line: any[]): void;
+	echo(...line: any[]): void;
+	warn(...line: any[]): void;
+	note(...line: any[]): void;
+	success(...line: any[]): void;
+	fail(...line: any[]): void;
+	error(...line: any[]): void;
+	fatal(...line: any[]): void;
 }
 
 export function createKit_Echo(ce: ActionEnv) {

@@ -1,6 +1,6 @@
 import { ITargetCheckModification, ITargetExec, ITargetInfo } from "./interfaces";
 
-export type MatchFunction = (s: string) => string[];
+export type MatchFunction = (s: string) => string[] | null;
 export type UnboundRule = (t: ITargetExec, ...args: string[]) => Promise<any>;
 export type BoundRule = () => Promise<any>;
 

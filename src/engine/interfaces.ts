@@ -55,7 +55,7 @@ export interface ITargetExec {
 	// Order-only dependency, forced
 	order(...targets: ArgList<ITargetInfo>): Promise<any[]>;
 	// Mark-only dependency
-	needed(...targets: ArgList<ITargetInfo>);
+	needed(...targets: ArgList<ITargetInfo>): void;
 	// Mark, order and placid
 	need(...targets: ArgList<ITargetInfo>): Promise<any[]>;
 }
@@ -66,8 +66,8 @@ export interface ITargetCheckModification extends ITargetInfo {
 }
 
 export interface ITargetIs {
-	placid();
-	volatile();
-	modified();
-	updatedAt(time: Date);
+	placid(): void;
+	volatile(): void;
+	modified(): void;
+	updatedAt(time: Date): void;
 }

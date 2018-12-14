@@ -7,14 +7,15 @@ import BuildResolver from "../engine/resolver";
 import Target from "../engine/target";
 import { Reporter } from "../reporter";
 import ConsoleReporter from "../reporter/console";
+import posixifyPath from "../match/posixify-path";
 
 export class Runner {
-	private reporter: Reporter = null;
-	private config: VerdaConfig = null;
-	private resolver: BuildResolver = null;
-	private sandbox: ReturnType<typeof createSandbox> = null;
+	private reporter: Reporter;
+	private config: VerdaConfig;
+	private resolver: BuildResolver;
+	private sandbox: ReturnType<typeof createSandbox>;
 
-	configure(config: VerdaConfig) {
+	constructor(config: VerdaConfig) {
 		this.config = config;
 		this.reporter = new ConsoleReporter(this.config.verbosity);
 		this.sandbox = createSandbox(config);
@@ -25,7 +26,7 @@ export class Runner {
 
 	inject(context: object) {
 		for (const key in this.sandbox) {
-			global[key] = this.sandbox[key];
+			(global as any)[key] = (this.sandbox as any)[key];
 		}
 	}
 
@@ -46,7 +47,7 @@ export class Runner {
 
 	setSelfTracking(selfTrackingTargetID: string, trackingID: string) {
 		const selfTracking = this.resolver.query(selfTrackingTargetID);
-		const selfTrackingRule = this.resolver.getRule(selfTracking);
+		const selfTrackingRule = this.resolver.tryGetRule(selfTracking);
 		if (!selfTrackingRule) {
 			this.resolver.defineRule(
 				new SelfTracking("self-tracking", s => (s === selfTracking.id ? [s] : null)).def(
@@ -78,7 +79,7 @@ export class Runner {
 
 	async build(start: Target, selfTracking?: Target) {
 		try {
-			if (selfTracking.volatile) await this.resolver.want(selfTracking);
+			if (selfTracking && selfTracking.volatile) await this.resolver.want(selfTracking);
 			await this.resolver.want(start);
 			if (selfTracking) this.resolver.setImplicitDependency("user", selfTracking);
 		} catch (e) {

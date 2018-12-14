@@ -3,9 +3,8 @@ import { VerdaConfig, IExternalOptions } from "./edsl/config";
 import { Arguments } from "yargs";
 
 export function createEnv(rulePath?: string, cwd?: string, argv?: Arguments) {
-	const runner = new Runner();
 	const config = new VerdaConfig(<IExternalOptions>Object.assign({ rulePath, cwd }, argv || {}));
-	runner.configure(config);
+	const runner = new Runner(config);
 	return { runner, config, argv, ...runner.getSandbox() };
 }
 

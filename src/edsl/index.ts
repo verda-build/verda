@@ -32,7 +32,7 @@ export function createSandbox(config: VerdaConfig) {
 	const actionEnvKits: ActionEnvKitFunction[] = [defaultActionEnvKit];
 
 	function getCmd(ce: ActionEnv, config: VerdaConfig) {
-		let o = {};
+		let o: any = {};
 		for (const k of actionKits) {
 			o = Object.assign(o, k(ce, config));
 		}
@@ -40,7 +40,7 @@ export function createSandbox(config: VerdaConfig) {
 			const kit = k(ce, config);
 			for (const key in kit) {
 				const fn = kit[key];
-				o[key] = argument => getCmd(fn(argument), config);
+				o[key] = (argument: any) => getCmd(fn(argument), config);
 			}
 		}
 		return o;

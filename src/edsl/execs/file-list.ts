@@ -1,8 +1,13 @@
 import * as path from "path";
 import { MatchFunction } from "../../engine/rule";
 import { PatternMatch } from "../../match";
-import { collectFilesFromDirStructureResult } from "../rule/utils";
+import {
+	collectFilesFromDirStructureResult,
+	FileStatInfo,
+	pathParseAndUpdate
+} from "../rule/utils";
 import posixifyPath from "../../match/posixify-path";
+import { ITargetExec } from "../../engine/interfaces";
 
 export interface FileListDefinitionOptions {
 	under: string;
@@ -16,7 +21,7 @@ function fileListExec(options: FileListDefinitionOptions) {
 	const mf: MatchFunction =
 		pattern instanceof Function ? pattern : pattern ? PatternMatch(pattern) : () => [];
 
-	return async function(target) {
+	return async function(target: ITargetExec) {
 		const [fo] = await target.order(`dir-structure:${dir}`);
 		const files = collectFilesFromDirStructureResult(fo);
 		const result = [];
@@ -32,15 +37,15 @@ function fileListExec(options: FileListDefinitionOptions) {
 }
 export function FileList(options: FileListDefinitionOptions) {
 	const fn = fileListExec(options);
-	return async target => {
+	return async (target: ITargetExec) => {
 		return target.trackModification(await fn(target));
 	};
 }
 export function FileListUpdated(options: FileListDefinitionOptions) {
 	const fn = fileListExec(options);
-	return async target => {
+	return async (target: ITargetExec) => {
 		const r = await fn(target);
-		await target.need(...r);
-		return target.trackModification(r);
+		const ans = await Promise.all(r.map(pathParseAndUpdate));
+		return target.trackModification(ans);
 	};
 }

@@ -1,8 +1,8 @@
-import { RuleBase, UserRule } from "./rule-base";
-import { MatchFunction, Rule } from "../../engine/rule";
-import { ITargetExec, ITargetCheckModification, ITargetInfo } from "../../engine/interfaces";
 import * as fs from "fs-extra";
-import { pathParseAndUpdate, fileIsUpdated } from "./utils";
+import { ITargetCheckModification, ITargetExec, ITargetInfo } from "../../engine/interfaces";
+import { MatchFunction, Rule } from "../../engine/rule";
+import { UserRule } from "./rule-base";
+import { pathParseAndUpdate } from "./utils";
 
 export class File extends UserRule implements Rule {
 	constructor(kind: string, pattern: string | MatchFunction) {

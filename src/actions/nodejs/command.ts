@@ -28,8 +28,8 @@ function startNodeJSCallPromise(
 	args: any[],
 	options: ProcessActionOptions
 ) {
-	let returnValue = null;
-	let errorThrown = null;
+	let returnValue: string | null = null;
+	let errorThrown: Error | null = null;
 	let proc = cp.spawn(
 		process.execPath,
 		["--max-old-space-size=" + memorySize, path.join(__dirname, "nodejs-call-process.js")],
@@ -82,7 +82,7 @@ function startNodeJSCallPromise(
 }
 
 export function createKit_NodeJS(ce: ActionEnv, Resource: () => ResourceLock) {
-	let resource = null;
+	let resource: ResourceLock | null = null;
 
 	function runNodeJS(module: string, ...args: any[]): Promise<any> {
 		if (!resource) resource = Resource();

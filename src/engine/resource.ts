@@ -7,7 +7,7 @@ export interface ResourceLock {
 }
 
 function wait(dt: number) {
-	return new Promise(resolve => {
+	return new Promise<null>(resolve => {
 		setTimeout(() => resolve(null), dt);
 	});
 }
@@ -17,7 +17,7 @@ export class Resource implements ResourceLock {
 	constructor(n: number = 0) {
 		this.setParallel(n);
 	}
-	lock: Semaphore = null;
+	lock: Semaphore | null = null;
 	setParallel(n: number) {
 		if (!n) this.lock = null;
 		else this.lock = new Semaphore(n);

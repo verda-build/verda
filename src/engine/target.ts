@@ -25,9 +25,9 @@ export default class Target implements ITargetInfo {
 
 	private _tracked: any = null;
 	private _returned: any = undefined;
-	private _lastError: Error = null;
+	private _lastError: Error | null = null;
 
-	constructor(id) {
+	constructor(id: string) {
 		this.id = id;
 	}
 
@@ -37,7 +37,7 @@ export default class Target implements ITargetInfo {
 	get lastReturned(): any {
 		return this._returned;
 	}
-	get lastError(): Error {
+	get lastError(): Error | null {
 		return this._lastError;
 	}
 
@@ -162,7 +162,7 @@ export default class Target implements ITargetInfo {
 		}
 		return o;
 	}
-	fromJson(j, resolver: IResolver<Target>) {
+	fromJson(j: any, resolver: IResolver<Target>) {
 		this.builtKind = j.builtKind;
 		this.volatile = j.volatile;
 		this._tracked = j.tracking;
@@ -172,9 +172,11 @@ export default class Target implements ITargetInfo {
 			this._returned = j.lastReturned;
 		}
 		this.dependencies = j.dependencies.map(
-			g => new Set(g.map(targetID => resolver.query(targetID)))
+			(g: any) => new Set(g.map((targetID: any) => resolver.query(targetID)))
 		);
-		this.implicitDependencies = new Set(j.implicitDependencies.map(id => resolver.query(id)));
+		this.implicitDependencies = new Set(
+			j.implicitDependencies.map((id: any) => resolver.query(id))
+		);
 		this.updated = new Date(j.updated);
 	}
 }

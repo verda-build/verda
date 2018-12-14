@@ -4,7 +4,7 @@ export type Dict<T> = { [key: string]: T };
 
 export interface ActionEnv {
 	readonly cd: string;
-	readonly env: Dict<string>;
+	readonly env: Dict<string | undefined>;
 	readonly ruleDir: string;
 	readonly rulePath: string;
 	readonly reporter: Reporter;

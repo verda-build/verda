@@ -11,7 +11,8 @@ export default class BuildResolver implements IResolver<Target> {
 
 	reporter: Reporter = new QuietReporter();
 	query(s: string): Target {
-		if (this.database.has(s)) return this.database.get(s);
+		const existing = this.database.get(s);
+		if (existing) return existing;
 		const target = new Target(s);
 		this.database.set(s, target);
 		return target;
@@ -31,7 +32,7 @@ export default class BuildResolver implements IResolver<Target> {
 		}
 	}
 
-	getRule(t: Target, matchKind: boolean = false): RuleCandidate {
+	tryGetRule(t: Target, matchKind: boolean = false): RuleCandidate | null {
 		for (const rule of this.rules) {
 			const m = rule.match(t.id);
 			if (m && (!matchKind || !t.builtKind || rule.kind === t.builtKind)) {
@@ -41,12 +42,22 @@ export default class BuildResolver implements IResolver<Target> {
 		return null;
 	}
 
+	getRule(t: Target, matchKind: boolean = false): RuleCandidate {
+		const r = this.tryGetRule(t, matchKind);
+		if (!r) throw new Error("Rule not found for " + t.id);
+		else return r;
+	}
+
 	checkModified(target: Target, against: Target) {
 		const ruleCandidate = this.getRule(target);
 		return this._checkModified(target, against, ruleCandidate);
 	}
 
-	private async _checkModified(target: Target, against: Target, ruleCandidate: RuleCandidate) {
+	private async _checkModified(
+		target: Target,
+		against: Target | null,
+		ruleCandidate: RuleCandidate
+	): Promise<boolean> {
 		const proxy = new MCTargetProxy(target, this, ruleCandidate);
 		const itselfModified = await target.startModifiedCheck(() => {
 			return ruleCandidate.rule.checkModified(
@@ -100,14 +111,14 @@ export default class BuildResolver implements IResolver<Target> {
 		return this.buildTarget(target);
 	}
 
-	fromJson(json) {
+	fromJson(json: any) {
 		for (const id in json) {
 			this.query(id).fromJson(json[id], this);
 		}
 	}
 
-	toJson(): Object {
-		const o = {};
+	toJson(): any {
+		const o: any = {};
 		for (const [id, target] of this.database) {
 			o[id] = target.toJson();
 		}

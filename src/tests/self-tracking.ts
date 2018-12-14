@@ -45,7 +45,7 @@ test("Nested file dependency", async t => {
 	await rebuild();
 	t.is(triggeredRebuild, true);
 
-	await tamper(`${dir2}/rule.txt`, "a");
+	await tamper(`${dir2}/rule.txt`, "b");
 	await rebuild();
 	t.is(triggeredRebuild, true);
 });

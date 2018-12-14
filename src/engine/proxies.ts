@@ -41,13 +41,13 @@ function getRD<T, G extends object, R extends object>(
 	ctor: new () => T,
 	target: G,
 	resolver: R
-) {
-	if (proxies.has(resolver) && proxies.get(resolver).has(target)) {
-		return proxies.get(resolver).get(target);
+): T {
+	if (proxies.has(resolver) && proxies.get(resolver)!.has(target)) {
+		return proxies.get(resolver)!.get(target)!;
 	} else {
 		const proxy = new ctor();
 		if (!proxies.has(resolver)) proxies.set(resolver, new WeakMap<G, T>());
-		proxies.get(resolver).set(target, proxy);
+		proxies.get(resolver)!.set(target, proxy);
 		return proxy;
 	}
 }
@@ -86,7 +86,7 @@ export class ETargetProxy implements ITargetExec {
 	track<T>(x: T): T {
 		return this.target.track(x);
 	}
-	trackModification(x, compare = equal) {
+	trackModification(x: any, compare = equal) {
 		if (!compare(this.tracking, x)) this.is.modified();
 		this.track(x);
 		return x;
@@ -232,7 +232,7 @@ export class MCTargetProxy implements ITargetCheckModification {
 				return (this.anyModified = true);
 			}
 			for (let j = 0; j < deps.length; j++) {
-				if (!triggered[j]) continue;
+				if (!triggered[j] || !this.resolver.reporter) continue;
 				this.resolver.reporter.debug(
 					"Triggered Update:",
 					this.target.id,
@@ -246,7 +246,9 @@ export class MCTargetProxy implements ITargetCheckModification {
 	}
 
 	startBuildEarly() {
-		this.resolver.reporter.debug("Started early cutoff execute:", this.target.id);
+		if (this.resolver.reporter) {
+			this.resolver.reporter.debug("Started early cutoff execute:", this.target.id);
+		}
 		const proxy = new ETargetProxy(this.target, this.resolver);
 		return this.target.start(this.ruleCandidate.rule.kind, async () =>
 			this.ruleCandidate.rule.exec(proxy, ...this.ruleCandidate.m)

@@ -5,7 +5,7 @@ import { ITargetExec } from "../../engine/interfaces";
 export class RuleBase {
 	kind: string;
 	match: MatchFunction;
-	protected _exec: UnboundRule;
+	protected _exec: UnboundRule | undefined;
 
 	constructor(kind: string, pattern: string | MatchFunction) {
 		this.kind = kind;
@@ -22,6 +22,7 @@ export class UserRule extends RuleBase {
 		return this;
 	}
 	exec(target: ITargetExec, ...m: string[]) {
+		if (!this._exec) throw new Error("Executor not defined");
 		return this._exec(target, ...m);
 	}
 }
