@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import * as cliCursor from "cli-cursor";
 import * as readline from "readline";
-import stripAnsi = require("strip-ansi");
+import stripAnsi from "strip-ansi";
 
 // No idea how to detect whether the console font supports all the characters
 const dumbConsole = process.platform === "win32";

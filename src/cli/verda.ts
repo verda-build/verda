@@ -5,14 +5,14 @@ import { Session } from "../session";
 import { searchConfig } from "./search-config";
 
 const argv = yargs.argv;
-let suppressOutput = false;
 const { cwd, config: rulePath } = searchConfig(argv.r, argv.f, "verdafile.js");
 
 process.chdir(cwd);
 process.once("SIGINT", () => process.exit(1)).once("SIGTERM", () => process.exit(1));
 
 main(rulePath).catch(e => {
-	if (!suppressOutput) console.error(e);
+	console.error("");
+	console.error(e);
 	process.exit(1);
 });
 
@@ -31,9 +31,7 @@ async function main(rulePath: string) {
 	await session.loadJournal();
 	await session.createSelfTrackingRule(session.userSelfTrackingGoal);
 	try {
-		suppressOutput = true;
 		await session.start(...argv._);
-		suppressOutput = false;
 	} finally {
 		await session.saveJournal();
 	}

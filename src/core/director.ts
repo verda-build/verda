@@ -474,14 +474,12 @@ class BuildContextImpl implements ExtBuildContext<any> {
 	}
 
 	private checkCircular(deps: Iterable<Objective<any>>) {
-		let allDeps = new Set();
+		let allDeps = new Set<Objective<any>>();
 		for (const t of deps) {
 			this.collectAllDeps(t, allDeps);
-			if (allDeps.has(this)) {
+			if (allDeps.has(this.objective)) {
 				throw new Error(
-					`Circular dependency when building ${this.objective.goal.id}, depending on ${
-						t.goal.id
-					}.`
+					`Circular dependency when building ${this.objective.goal.id}, depending on ${t.goal.id}.`
 				);
 			}
 		}
