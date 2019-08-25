@@ -1,6 +1,6 @@
 {
 	"name": "verda",
-	"version": "1.0.0-3",
+	"version": "1.0.0-4",
 	"description": "Build Directly.",
 	"engineStrict": true,
 	"engines": {
