@@ -1,9 +1,9 @@
-import { ITargetPath } from "./interfaces";
-import posixifyPath from "../match/posixify-path";
+import { ParsedPath } from "./interface";
+import posixifyPath from "./posixify-path";
 
 const splitPathRe = /^([a-zA-Z\-:]+:|)(\/|)([\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
 
-export default class ParsedPath implements ITargetPath {
+export default class ParsedPathImpl implements ParsedPath {
 	readonly prefix: string;
 	readonly full: string;
 	readonly root: string;
@@ -12,7 +12,7 @@ export default class ParsedPath implements ITargetPath {
 	readonly ext: string;
 	readonly base: string;
 
-	constructor(_s: string) {
+	constructor(_s: string, readonly $: string[] = []) {
 		const s = posixifyPath(_s);
 		const allParts = splitPathRe.exec(s);
 		if (!allParts || allParts.length !== 6) {

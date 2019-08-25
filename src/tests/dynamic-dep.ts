@@ -1,32 +1,36 @@
 import test from "ava";
 import * as fs from "fs-extra";
-import { createSandbox } from "../edsl";
-import { VerdaConfig } from "../edsl/config";
+
+import { VerdaConfig } from "../config";
+import Director from "../core/director";
+import { ImplicitFileRules } from "../rule-types/file";
+import { Task } from "../rule-types/task";
 import { tamper, wait } from "../test-helper";
 
-const {
-	resolver,
-	rule: { task }
-} = createSandbox(new VerdaConfig({}));
+test("Dynamic dependency test", async t => {
+	const director = new Director();
+	const { dc, fu } = ImplicitFileRules(new VerdaConfig({ rulePath: "./package.json" }), director);
+	const { task } = Task(director);
 
-task("start").def(async target => {
-	const list = "payloads/dynamic/list.txt";
-	const r = await target.need("payloads/dynamic/list.txt");
-	const lines = (await fs.readFile(list, "utf-8"))
-		.split("\n")
-		.map(file => `payloads/dynamic/${file}`);
-	const deps = await target.need(...lines);
-	triggeredRebuild = true;
-});
+	let triggeredRebuild = false;
 
-let triggeredRebuild = false;
-async function rebuild() {
-	triggeredRebuild = false;
-	await wait(100);
-	await resolver.want(resolver.query("start"));
-}
+	const start = task(`start`, async target => {
+		const list = "payloads/dynamic/list.txt";
+		await target.need(fu`payloads/dynamic/list.txt`);
+		const lines = (await fs.readFile(list, "utf-8"))
+			.split("\n")
+			.map(file => fu`payloads/dynamic/${file}`);
+		await target.need(...lines);
+		triggeredRebuild = true;
+	});
 
-test("Dynamic dependency", async t => {
+	async function rebuild() {
+		triggeredRebuild = false;
+		await wait(100);
+		await director.reset();
+		await director.want(start);
+	}
+
 	await fs.ensureDir("payloads/dynamic");
 	await tamper("payloads/dynamic/list.txt", "a.txt\nb.txt");
 	await tamper("payloads/dynamic/a.txt", "a");
@@ -43,16 +47,10 @@ test("Dynamic dependency", async t => {
 	await rebuild();
 	t.is(triggeredRebuild, true);
 
-	// Remove a depended file
-	// Should throw an error
-	await tamper("payloads/dynamic/c.txt", "");
-	await t.throws(rebuild(), Error);
-
-	// Bring it back
-	// Should trigger rebuild
+	// Tampering without changing should not trigger rebuild
 	await tamper("payloads/dynamic/c.txt", "c");
 	await rebuild();
-	t.is(triggeredRebuild, true);
+	t.is(triggeredRebuild, false);
 
 	// Removing dependency
 	await tamper("payloads/dynamic/list.txt", "a.txt\nb.txt");
@@ -70,7 +68,12 @@ test("Dynamic dependency", async t => {
 	t.is(triggeredRebuild, false);
 
 	// Tamper a dep
-	await tamper("payloads/dynamic/a.txt", "a");
+	await tamper("payloads/dynamic/a.txt", "aa");
 	await rebuild();
 	t.is(triggeredRebuild, true);
+
+	// Tamper a dep without changes
+	await tamper("payloads/dynamic/a.txt", "aa");
+	await rebuild();
+	t.is(triggeredRebuild, false);
 });

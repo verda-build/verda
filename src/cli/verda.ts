@@ -1,7 +1,8 @@
 import * as yargs from "yargs";
-import posixifyPath from "../match/posixify-path";
+
+import { Session } from "../session";
+
 import { searchConfig } from "./search-config";
-import * as path from "path";
 
 const argv = yargs.argv;
 let suppressOutput = false;
@@ -17,41 +18,23 @@ main(rulePath).catch(e => {
 
 // The main building process
 async function main(rulePath: string) {
-	// We resolve DE and Verda Instance's path by relative to rule file's
-	// It would fix some rare case of casing bugs.
-	const rulePathDir = path.dirname(rulePath);
-	const relativeDefaultEnvPath = path.relative(
-		rulePathDir,
-		path.resolve(__dirname, "../default-env.js")
-	);
-	const relativeVerdaPath = path.relative(rulePathDir, path.resolve(__dirname, "../index.js"));
-	const absoluteDefaultEnvPath = path.join(rulePathDir, relativeDefaultEnvPath);
-	const absoluteVerdaPath = path.join(rulePathDir, relativeVerdaPath);
+	const _sessionModule = await import(rulePath);
+	const _session = _sessionModule.default || _sessionModule;
 
-	const de = await import(absoluteDefaultEnvPath);
-	de.setEnv(rulePath, cwd, argv);
-	const verda = await import(absoluteVerdaPath);
-
-	// Import the rule
-	const m = await import(rulePath);
-
-	if (m instanceof Function) {
-		const r = m(verda, argv, cwd, rulePath);
-		if (r instanceof Promise) await r;
+	if (!_session.loadJournal || !_session.start) {
+		throw new Error(`Configuration ${rulePath} is not default-exporting a Verda configuration`);
 	}
 
-	const start = verda.runner.setStartTask("meta:start");
-	const selfTracking = verda.runner.setSelfTracking(
-		"meta:self-tracking",
-		`file-updated:${posixifyPath(rulePath)}`
-	);
+	const session = _session as Session;
+	session.bindConfig({ rulePath, cwd, ...argv });
 
-	await verda.runner.loadJournal();
+	await session.loadJournal();
+	await session.createSelfTrackingRule(session.userSelfTrackingGoal);
 	try {
 		suppressOutput = true;
-		await verda.runner.build(start, selfTracking);
+		await session.start(...argv._);
 		suppressOutput = false;
 	} finally {
-		await verda.runner.saveJournal();
+		await session.saveJournal();
 	}
 }

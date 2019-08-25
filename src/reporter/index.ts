@@ -3,9 +3,11 @@ export interface Reporter {
 	end(wrong?: boolean): void;
 
 	// Target start/termination
-	targetStart(name: string, kind: string): void;
-	targetSkip(name: string, kind: string): void;
+	targetStart(name: string): void;
+	targetSkip(name: string): void;
 	targetEnd(name: string): void;
+	targetHalt(name: string): void;
+	targetUnHalt(name: string): void;
 	targetError(name: string, e: Error): void;
 
 	// STDOUT/STDERR redirection

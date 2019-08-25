@@ -13,7 +13,7 @@
 		"noFallthroughCasesInSwitch": true,
 		"noUnusedLocals": false,
 		"declaration": true,
-		"outDir": "build"
+		"outDir": "lib"
 	},
 	"include": ["src/**/*"]
 }

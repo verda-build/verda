@@ -1,25 +1,32 @@
-import * as path from "path";
 import * as fs from "fs-extra";
-export function searchConfig(r: string, f: string, fn: string): { cwd: string; config: string } {
-	if (f) {
-		f = require.resolve(path.resolve(f));
-		if (!fs.pathExistsSync(f)) throw new Error(`Rule file ${f} does not exist.`);
+import * as path from "path";
+
+export function searchConfig(
+	workDir: string,
+	explicitRuleFile: string,
+	fn: string
+): { cwd: string; config: string } {
+	if (explicitRuleFile) {
+		explicitRuleFile = require.resolve(path.resolve(explicitRuleFile));
+		if (!fs.pathExistsSync(explicitRuleFile)) {
+			throw new Error(`Rule file ${explicitRuleFile} does not exist.`);
+		}
 		return {
-			cwd: r || path.dirname(f),
-			config: f
+			cwd: workDir || path.dirname(explicitRuleFile),
+			config: explicitRuleFile
 		};
 	}
-	if (!r) r = process.cwd();
-	r = path.resolve(r);
+	if (!workDir) workDir = process.cwd();
+	workDir = path.resolve(workDir);
 	do {
-		if (fs.pathExistsSync(path.join(r, fn))) {
+		if (fs.pathExistsSync(path.join(workDir, fn))) {
 			return {
-				cwd: r,
-				config: path.join(r, fn)
+				cwd: workDir,
+				config: path.join(workDir, fn)
 			};
 		}
-		if (path.resolve(r, "..") === r) break;
-		r = path.resolve(r, "..");
+		if (path.resolve(workDir, "..") === workDir) break;
+		workDir = path.resolve(workDir, "..");
 	} while (true);
 	throw new Error(`Rule file ${fn} does not exist.`);
 }

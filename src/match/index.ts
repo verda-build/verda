@@ -10,7 +10,7 @@ export function globToRegex(str: string) {
 	let inCharClass = false;
 	let escaped = false;
 
-	for (var i = 0, len = str.length; i < len; i++) {
+	for (let i = 0, len = str.length; i < len; i++) {
 		const c = str[i];
 		if (inCharClass) {
 			if (escaped) {
@@ -99,6 +99,16 @@ export function globToRegex(str: string) {
 }
 
 export function PatternMatch(pattern: string) {
+	const regex = globToRegex(pattern);
+	return function(s: string) {
+		const posixPath = posixifyPath(s);
+		const m = posixPath.match(regex);
+		if (!m) return m;
+		else return m.slice(1);
+	};
+}
+
+export function NonPosixifyPatternMatch(pattern: string) {
 	const regex = globToRegex(pattern);
 	return function(s: string) {
 		const posixPath = posixifyPath(s);

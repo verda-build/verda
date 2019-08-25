@@ -1,12 +1,13 @@
 import * as cp from "child_process";
 import { ChildProcess } from "child_process";
+import * as crypto from "crypto";
+import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
+import Semaphore from "semaphore-async-await";
 
-import { ProcessActionOptions } from "../command";
-import { ActionEnv } from "../interfaces";
-
-const memorySize = Math.round(os.totalmem() / 1048576);
+const jobs = os.cpus().length;
+const semaphore = new Semaphore(jobs);
 
 function nodejsExitPromise(p: ChildProcess, returnValue: () => any, err: () => any) {
 	return new Promise<any>(function(resolve, reject) {
@@ -22,27 +23,12 @@ function nodejsExitPromise(p: ChildProcess, returnValue: () => any, err: () => a
 	});
 }
 
-function startNodeJSCallPromise(
-	module: string,
-	modulePath: string,
-	args: any[],
-	options: ProcessActionOptions
-) {
+function hashFileChildProcessImpl(fileName: string): Promise<string> {
 	let returnValue: string | null = null;
 	let errorThrown: Error | null = null;
-	let proc = cp.spawn(
-		process.execPath,
-		["--max-old-space-size=" + memorySize, path.join(__dirname, "nodejs-call-process.js")],
-		{
-			cwd: options.cwd,
-			env: options.env,
-			stdio: ["pipe", "pipe", "pipe", "ipc"]
-		}
-	);
-
-	if (options.reporter) {
-		options.reporter.actions([[module, ...args]], "jsCall");
-	}
+	let proc = cp.spawn(process.execPath, [path.join(__dirname, "guest.js")], {
+		stdio: ["pipe", "pipe", "pipe", "ipc"]
+	});
 
 	proc.on("message", function(message) {
 		if (!message.directive) {
@@ -50,10 +36,7 @@ function startNodeJSCallPromise(
 		}
 		switch (message.directive) {
 			case "ready":
-				proc.send({ directive: "load", path: modulePath });
-				break;
-			case "loaded":
-				proc.send({ directive: "call", args: args });
+				proc.send({ directive: "compute", path: fileName });
 				break;
 			case "return":
 				returnValue = message.result;
@@ -73,24 +56,38 @@ function startNodeJSCallPromise(
 		}
 	});
 
-	if (options.reporter) {
-		proc.stdout.on("data", data => options.reporter.redirectStdout(data));
-		proc.stderr.on("data", data => options.reporter.redirectStderr(data));
-	}
-
 	return nodejsExitPromise(proc, () => returnValue, () => errorThrown);
 }
 
-export function createKit_NodeJS(ce: ActionEnv) {
-	function runNodeJS(module: string, ...args: any[]): Promise<any> {
-		return startNodeJSCallPromise(module, path.resolve(ce.cd, module), args, {
-			cwd: ce.cd,
-			env: ce.env,
-			reporter: ce.reporter
-		});
+export async function hashFile(path: string) {
+	try {
+		await semaphore.acquire();
+		const h = await hashFileChildProcessImpl(path);
+		semaphore.release();
+		return h;
+	} catch (e) {
+		semaphore.release();
+		throw e;
 	}
+}
 
-	return {
-		node: runNodeJS
-	};
+export async function hashSmallFile(path: string): Promise<string> {
+	return new Promise((resolve, reject) => {
+		let sum = crypto.createHash("sha1");
+
+		let fileStream = fs.createReadStream(path);
+		fileStream.on("error", function(err) {
+			return reject(err);
+		});
+		fileStream.on("data", function(chunk) {
+			try {
+				sum.update(chunk);
+			} catch (ex) {
+				return reject(ex);
+			}
+		});
+		fileStream.on("end", function() {
+			return resolve(sum.digest("hex"));
+		});
+	});
 }

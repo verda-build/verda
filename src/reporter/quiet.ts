@@ -5,9 +5,11 @@ export class QuietReporter implements Reporter {
 	end(wrong?: boolean) {}
 
 	// Target start/termination
-	targetStart(name: string, kind: string) {}
-	targetSkip(name: string, kind: string) {}
+	targetStart(name: string) {}
+	targetSkip(name: string) {}
 	targetEnd(name: string) {}
+	targetHalt(name: string) {}
+	targetUnHalt(name: string) {}
 	targetError(name: string, e: Error) {}
 
 	// STDOUT/STDERR redirection
