@@ -19,6 +19,8 @@ import {
 } from "./interface";
 import ProgressImpl from "./progress-impl";
 
+const JOURNAL_VERSION = 2;
+
 interface Objective<A extends any[]> {
 	goal: Goal<any, A>;
 	matchResult: A;
@@ -84,22 +86,25 @@ export default class Director implements Arbitrator {
 		return p;
 	}
 
-	queryGoalFromString(isName: boolean, name: string) {
+	queryGoal(isName: boolean, name: string, args?: null | undefined | string[]) {
 		const cached = isName ? null : this.database.get(name);
 		if (cached) return cached;
 		for (let j = this.rules.length - 1; j >= 0; j--) {
 			const rule = this.rules[j];
-			const id = isName ? rule.createGoalID(name) : name;
-			const m = isName ? rule.matchString(name) : rule.matchGoalID(id);
-			if (m) {
-				const goal = { id, rule };
-				const cached = this.database.get(id);
-				if (cached && cached.goal.rule === rule) return cached;
-				if (cached && cached.goal.rule !== rule) throw this.tryToBuildWithDifferentRule(id);
-				const entry = this.createObjective(m, goal);
-				this.database.set(id, entry);
-				return entry;
+			const match = isName || !args ? rule.matchString(name) : rule.matchGoalID(name, args);
+			if (!match) continue;
+
+			const goal = { id: match.id, args: match.args, rule };
+			const cached = this.database.get(goal.id);
+			if (cached && cached.goal.rule === rule) {
+				return cached;
 			}
+			if (cached && cached.goal.rule !== rule) {
+				throw this.tryToBuildWithDifferentRule(goal.id);
+			}
+			const objective = this.createObjective(match.execArgs, goal);
+			this.database.set(goal.id, objective);
+			return objective;
 		}
 		// no match, return undefined
 		return undefined;
@@ -115,10 +120,10 @@ export default class Director implements Arbitrator {
 			}
 		}
 
-		const m = goal.rule.matchGoalID(goal.id);
+		const m = goal.rule.matchGoalID(goal.id, goal.args);
 		if (!m) return undefined;
 
-		const entry = this.createObjective(m, goal);
+		const entry = this.createObjective(m.execArgs, goal);
 		this.database.set(goal.id, entry);
 		return entry;
 	}
@@ -139,6 +144,12 @@ export default class Director implements Arbitrator {
 		against: Objective<A>
 	): Promise<boolean> {
 		const itselfModified = await this.checkNeedRebuild(dep);
+		this.reporter.debug(
+			"Self modification[",
+			dep.goal.id,
+			"] =",
+			PreBuildResult[itselfModified]
+		);
 		switch (itselfModified) {
 			case PreBuildResult.TIME:
 				return dep.progress.revision > against.progress.revision;
@@ -207,9 +218,10 @@ export default class Director implements Arbitrator {
 	}
 
 	fromJson(json: any) {
-		for (const id in json) {
+		if (json.journalVersion !== JOURNAL_VERSION) return;
+		for (const id in json.entries) {
 			const p = this.getProgress(id);
-			p.fromJson(json[id]);
+			p.fromJson(json.entries[id]);
 		}
 	}
 
@@ -220,7 +232,7 @@ export default class Director implements Arbitrator {
 				o[id] = prog.toJson();
 			}
 		}
-		return o;
+		return { journalVersion: JOURNAL_VERSION, entries: o };
 	}
 
 	private lock: Semaphore | null = null;
@@ -291,8 +303,8 @@ export class PreBuildContextImpl implements PreBuildContext<any> {
 			try {
 				triggered = await Promise.all(
 					deps.map(dep => {
-						const g = this.director.queryGoalFromString(false, dep);
-						if (!g) throw this.director.ruleNotFound(dep);
+						const g = this.director.queryGoal(false, dep.id, dep.args);
+						if (!g) throw this.director.ruleNotFound(dep.id);
 						return this.director.checkTriggerRebuildByDependency(g, this.objective);
 					})
 				);
@@ -306,7 +318,7 @@ export class PreBuildContextImpl implements PreBuildContext<any> {
 					"Triggered Update:",
 					this.objective.goal.id,
 					"<==",
-					deps[j]
+					deps[j].id
 				);
 				return true;
 			}
@@ -351,7 +363,7 @@ function resolveObjective(
 	if (t === null || t === undefined) {
 		return t;
 	} else if (typeof t === "string") {
-		const g = dir.queryGoalFromString(true, t);
+		const g = dir.queryGoal(true, t);
 		if (!g) {
 			if (rootObjective) throw dir.dependencyNotFound(t, rootObjective.goal.id);
 			else throw dir.ruleNotFound(t);
@@ -509,7 +521,9 @@ class BuildContextImpl implements ExtBuildContext<any> {
 
 	private _needed(deps: Set<Objective<any>>) {
 		if (deps.size) {
-			this.objective.progress.dependencies.push(new Set([...deps].map(d => d.goal.id)));
+			this.objective.progress.dependencies.push(
+				[...deps].map(d => ({ id: d.goal.id, args: d.goal.args }))
+			);
 		}
 	}
 

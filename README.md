@@ -30,11 +30,11 @@ In Verda, all rules are strongly typed:
 
 ```typescript
 const build = require('verda').createBuildAndThenStart();
-const { computed, files } = build.ruleTypes;
+const { computed, file } = build.ruleTypes;
 const { fu } = build.rules;
 const { run, node, cd, cp, rm } = build.actions;
 
-const ObjFile = files('build/*.o', async (t, o) => {
+const ObjFile = file.glob('build/*.o', async (t, o) => {
     const c = await t.need(fu`src/${o.name}.c`);
     await run('gcc', c.full, '-o', o.full);
 });

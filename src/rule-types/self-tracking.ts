@@ -2,13 +2,13 @@ import Director from "../core/director";
 import {
 	ExportBuildRecipe,
 	ExtBuildContext,
-	MatchFunction,
+	GoalMatcher,
 	PreBuildContext,
 	PreBuildResult,
 	Rule
 } from "../core/interface";
-import { NonPosixifyPatternMatch } from "../match";
 
+import { ExactMatcher, KindMatcherT } from "./matchers";
 import { RuleBase } from "./rule-base";
 import { GoalBuilder } from "./util";
 
@@ -18,12 +18,8 @@ class SelfTrackingRule<T> extends RuleBase<Args> implements Rule<T, Args> {
 	readonly kindTag = "Builtin::Meta::SelfTrackingRule";
 	isUser = false;
 
-	constructor(
-		prefix: string,
-		pattern: string | MatchFunction<Args>,
-		private FRecipe: ExportBuildRecipe<T, Args>
-	) {
-		super(prefix, pattern instanceof Function ? pattern : NonPosixifyPatternMatch(pattern));
+	constructor(matcher: GoalMatcher<Args>, private FRecipe: ExportBuildRecipe<T, Args>) {
+		super(matcher);
 	}
 
 	async build(t: ExtBuildContext<T>, ...args: Args) {
@@ -44,8 +40,9 @@ class SelfTrackingRule<T> extends RuleBase<Args> implements Rule<T, Args> {
 export function SelfTracking(dir: Director) {
 	return function meta_selfTracking<T>(pattern: string, FRecipe: ExportBuildRecipe<T, Args>) {
 		const prefix = "Meta::SelfTracking::";
-		const rule = new SelfTrackingRule(prefix, pattern, FRecipe);
+		const matcher = new KindMatcherT(prefix, new ExactMatcher(pattern));
+		const rule = new SelfTrackingRule(matcher, FRecipe);
 		dir.addRule(rule);
-		return GoalBuilder<T, Args, string>(rule);
+		return GoalBuilder(matcher, rule);
 	};
 }

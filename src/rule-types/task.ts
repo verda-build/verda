@@ -2,7 +2,7 @@ import Director from "../core/director";
 import {
 	ExportBuildRecipe,
 	ExtBuildContext,
-	MatchFunction,
+	GoalMatcher,
 	PreBuildContext,
 	PreBuildResult,
 	Rule
@@ -17,12 +17,8 @@ type Args = string[];
 class TaskRule<T> extends RuleBase<Args> implements Rule<T, Args> {
 	readonly kindTag = "Builtin::TaskRule";
 
-	constructor(
-		prefix: string,
-		pattern: string | MatchFunction<Args>,
-		private FRecipe: ExportBuildRecipe<T, Args>
-	) {
-		super(prefix, pattern instanceof Function ? pattern : NonPosixifyPatternMatch(pattern));
+	constructor(matcher: GoalMatcher<Args>, private FRecipe: ExportBuildRecipe<T, Args>) {
+		super(matcher);
 	}
 
 	async build(t: ExtBuildContext<T>, ...args: Args) {
@@ -40,11 +36,16 @@ class TaskRule<T> extends RuleBase<Args> implements Rule<T, Args> {
 }
 
 export function Task(dir: Director) {
-	const _task = SinglePlural_T<Args>(
+	const _task = SinglePlural_T(
 		"Builtin::Task::",
 		dir,
-		(s: string) => [s],
-		(prefix, pattern, FRecipe) => new TaskRule(prefix, pattern, FRecipe)
+		(matcher, FRecipe) => new TaskRule(matcher, FRecipe)
 	);
-	return { task: _task.exact, tasks: Object.assign(_task.patterned, { group: _task.subPrefix }) };
+	return {
+		task: Object.assign(_task.exact, {
+			glob: _task.glob,
+			group: _task.subPrefix,
+			make: _task.make
+		})
+	};
 }

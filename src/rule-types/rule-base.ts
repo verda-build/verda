@@ -1,32 +1,20 @@
-import { MatchFunction } from "../core/interface";
+import { GoalMatcher, RuleMatchResult } from "../core/interface";
 
 export abstract class RuleBase<A extends any[]> {
 	protected abstract kindTag: string;
-	protected matchFunction: MatchFunction<A>;
-	protected ruleIDPrefix: string;
+	protected goalMatcher: GoalMatcher<A>;
 
 	isUser: boolean = true;
 	ignoreStringMatch: boolean = false;
 
-	constructor(prefix: string, mf: MatchFunction<A>) {
-		this.matchFunction = mf;
-		this.ruleIDPrefix = prefix;
+	constructor(mf: GoalMatcher<A>) {
+		this.goalMatcher = mf;
 	}
 
-	matchString(id: string): null | A {
-		if (this.ignoreStringMatch) return null;
-		return this.matchFunction(id);
+	matchString(id: string): null | RuleMatchResult<A> {
+		return this.goalMatcher.matchString(id);
 	}
-	matchGoalID(id: string): null | A {
-		if (!this.ruleIDPrefix) {
-			return this.matchFunction(id);
-		} else if (id.startsWith(this.ruleIDPrefix)) {
-			return this.matchFunction(id.slice(this.ruleIDPrefix.length));
-		} else {
-			return null;
-		}
-	}
-	createGoalID(id: string) {
-		return this.ruleIDPrefix + id;
+	matchGoalID(id: string, args: string[]): null | RuleMatchResult<A> {
+		return this.goalMatcher.matchGoalID(id, args);
 	}
 }

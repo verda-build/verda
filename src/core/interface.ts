@@ -5,13 +5,16 @@ export interface JsonMap {
 export interface JsonArray extends Array<string | number | boolean | null | JsonArray | JsonMap> {}
 export type Json = JsonMap | JsonArray | string | number | boolean | null;
 
+// Dep
+export type Dependency = { readonly id: string; readonly args: string[] };
+
 // Rule
+export type RuleMatchResult<A> = null | Dependency & { execArgs: A };
 export interface Rule<T, A extends any[]> {
 	readonly kindTag: string;
 	readonly isUser: boolean;
-	matchString(id: string): null | A;
-	matchGoalID(id: string): null | A;
-	createGoalID(id: string): string;
+	matchString(id: string): RuleMatchResult<A>;
+	matchGoalID(id: string, args: string[]): RuleMatchResult<A>;
 	build(t: ExtBuildContext<T>, ...args: A): Promise<T>;
 	preBuild(t: PreBuildContext<T>, ...args: A): Promise<PreBuildResult>;
 }
@@ -21,8 +24,7 @@ export type GoalFunction<T, A extends any[]> = (
 	literals: string | TemplateStringsArray,
 	...placeholders: string[]
 ) => Goal<T, A>;
-export interface Goal<T, A extends any[]> {
-	readonly id: string;
+export interface Goal<T, A extends any[]> extends Dependency {
 	readonly rule: Rule<T, A>;
 }
 
@@ -51,7 +53,7 @@ export interface Progress<T> {
 	readonly status: BuildStatus;
 	readonly preBuildStatus: PreBuildStatus;
 	readonly preBuildResult: PreBuildResult;
-	readonly dependencies: Set<string>[];
+	readonly dependencies: Dependency[][];
 	readonly volatile: boolean;
 	readonly lastResult: undefined | T;
 	readonly result: undefined | T;
@@ -103,7 +105,11 @@ export interface PreBuildContext<T> {
 export type ExportBuildRecipe<T, A extends any[]> = (t: BuildContext, ...args: A) => Promise<T>;
 
 // Patterns
-export type MatchFunction<A extends any[]> = (id: string) => null | A;
+export interface GoalMatcher<A> {
+	createGoalIdFromArgs(args: string[]): Dependency & { execArgs: A };
+	matchString(id: string): RuleMatchResult<A>;
+	matchGoalID(id: string, args: string[]): RuleMatchResult<A>;
+}
 
 // Arbitration
 export interface Arbitrator {

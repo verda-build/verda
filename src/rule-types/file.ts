@@ -8,23 +8,21 @@ import {
 	ExportBuildRecipe,
 	ExtBuildContext,
 	GoalFunction,
-	MatchFunction,
+	GoalMatcher,
 	PreBuildContext,
 	PreBuildResult,
 	Rule
 } from "../core/interface";
 import { hashFile, hashSmallFile } from "../file-hasher/host";
-import { NonPosixifyPatternMatch } from "../match";
-import { DirContents, ParsedPath } from "../match/interface";
+import { DirContents } from "../match/interface";
 import ParsedPathImpl from "../match/parse-path";
 import posixifyPath from "../match/posixify-path";
 
 import { FileStatInfo } from "./interface";
+import { AlwaysMatcher, FileExecArgs, FilePathMatcherT, KindMatcherT } from "./matchers";
 import { OracleRule } from "./oracle";
 import { RuleBase } from "./rule-base";
 import { GoalBuilder, SinglePlural_F } from "./util";
-
-type Args = [ParsedPath];
 
 class FileStatInfoImpl extends ParsedPathImpl implements FileStatInfo {
 	readonly present: boolean = false;
@@ -59,7 +57,7 @@ async function getDirContents(
 	recursive: boolean,
 	target: BuildContext,
 	$1: string,
-	gfu: GoalFunction<FileStatInfo, Args>,
+	gfu: GoalFunction<FileStatInfo, FileExecArgs>,
 	gf: GoalFunction<DirContents, string[]>
 ) {
 	target.is.volatile();
@@ -95,45 +93,23 @@ async function getDirContents(
 	return tracking;
 }
 
-function createMatcher(
-	cfg: VerdaConfig,
-	pattern: string | MatchFunction<string[]>
-): MatchFunction<Args> {
-	const pm = pattern instanceof Function ? pattern : NonPosixifyPatternMatch(pattern);
-	return function(_path: string) {
-		const rp = posixifyPath(path.relative(cfg.cwd, path.resolve(cfg.cwd, _path)));
-		const frags = pm(rp);
-		if (frags) {
-			const pp = new ParsedPathImpl(rp, frags);
-			return [pp];
-		} else {
-			return null;
-		}
-	};
-}
-
 function getRegularPath(cwd: string, p: string) {
 	const rp = path.relative(cwd, path.resolve(cwd, p));
 	return posixifyPath(rp);
 }
 
-class FileRule extends RuleBase<Args> implements Rule<FileStatInfo, Args> {
+class FileRule extends RuleBase<FileExecArgs> implements Rule<FileStatInfo, FileExecArgs> {
 	readonly kindTag = "Builtin::FileRule";
 
 	constructor(
-		private readonly cfg: VerdaConfig,
-		prefix: string,
-		pattern: string | MatchFunction<string[]>,
-		private FRecipe: ExportBuildRecipe<void, Args>
+		matcher: GoalMatcher<FileExecArgs>,
+		private FRecipe: ExportBuildRecipe<void, FileExecArgs>
 	) {
-		super(prefix, createMatcher(cfg, pattern));
+		super(matcher);
 	}
 
-	createGoalID(p: string) {
-		return this.ruleIDPrefix + getRegularPath(this.cfg.cwd, p);
-	}
-	async build(t: ExtBuildContext<FileStatInfo>, path: ParsedPathImpl) {
-		await this.FRecipe(t, path);
+	async build(t: ExtBuildContext<FileStatInfo>, path: ParsedPathImpl, ...args: string[]) {
+		await this.FRecipe(t, path, ...args);
 		t.is.modified();
 		const u = await pathParseAndUpdate(path.full);
 		return u;
@@ -152,19 +128,14 @@ class FileRule extends RuleBase<Args> implements Rule<FileStatInfo, Args> {
 	}
 }
 
-export class FileUpdatedRule extends RuleBase<Args> implements Rule<FileStatInfo, Args> {
+export class FileUpdatedRule extends RuleBase<FileExecArgs>
+	implements Rule<FileStatInfo, FileExecArgs> {
 	readonly kindTag = "Builtin::FileUpdateRule";
 
-	constructor(
-		private readonly cfg: VerdaConfig,
-		prefix: string,
-		pattern: string | MatchFunction<string[]>
-	) {
-		super(prefix, createMatcher(cfg, pattern));
+	constructor(matcher: GoalMatcher<FileExecArgs>) {
+		super(matcher);
 	}
-	createGoalID(p: string) {
-		return this.ruleIDPrefix + getRegularPath(this.cfg.cwd, p);
-	}
+
 	async build(target: ExtBuildContext<FileStatInfo>, $1: ParsedPathImpl) {
 		const u = await pathParseAndUpdate($1.full);
 		if (!u) {
@@ -189,19 +160,14 @@ export class FileUpdatedRule extends RuleBase<Args> implements Rule<FileStatInfo
 		return changed ? PreBuildResult.YES : PreBuildResult.TIME;
 	}
 }
-export class FileExistsRule extends RuleBase<Args> implements Rule<FileStatInfo, Args> {
+export class FileExistsRule extends RuleBase<FileExecArgs>
+	implements Rule<FileStatInfo, FileExecArgs> {
 	readonly kindTag = "Builtin::FileExistsRule";
 
-	constructor(
-		private readonly cfg: VerdaConfig,
-		prefix: string,
-		pattern: string | MatchFunction<string[]>
-	) {
-		super(prefix, createMatcher(cfg, pattern));
+	constructor(matcher: GoalMatcher<FileExecArgs>) {
+		super(matcher);
 	}
-	createGoalID(p: string) {
-		return this.ruleIDPrefix + getRegularPath(this.cfg.cwd, p);
-	}
+
 	matchString(id: string) {
 		return null;
 	}
@@ -217,19 +183,14 @@ export class FileExistsRule extends RuleBase<Args> implements Rule<FileStatInfo,
 			: PreBuildResult.NO;
 	}
 }
-export class DirExistsRule extends RuleBase<Args> implements Rule<FileStatInfo, Args> {
+export class DirExistsRule extends RuleBase<FileExecArgs>
+	implements Rule<FileStatInfo, FileExecArgs> {
 	readonly kindTag = "Builtin::DirExistsRule";
 
-	constructor(
-		private readonly cfg: VerdaConfig,
-		prefix: string,
-		pattern: string | MatchFunction<string[]>
-	) {
-		super(prefix, createMatcher(cfg, pattern));
+	constructor(matcher: GoalMatcher<FileExecArgs>) {
+		super(matcher);
 	}
-	createGoalID(p: string) {
-		return this.ruleIDPrefix + getRegularPath(this.cfg.cwd, p);
-	}
+
 	matchString(id: string) {
 		return null;
 	}
@@ -247,59 +208,58 @@ export class DirExistsRule extends RuleBase<Args> implements Rule<FileStatInfo, 
 }
 
 export function File(cfg: VerdaConfig, dir: Director) {
-	const _file = SinglePlural_F<void, FileStatInfo, string[], Args>(
+	const _file = SinglePlural_F<void, FileStatInfo>(
 		"Builtin::File::",
 		dir,
-		(s: string) => [s],
-		(prefix, pattern, FRecipe) => new FileRule(cfg, prefix, pattern, FRecipe)
+		cfg,
+		(matcher, FRecipe) => new FileRule(matcher, FRecipe)
 	);
-	return { file: _file.exact, files: _file.patterned };
+	return { file: Object.assign(_file.exact, { glob: _file.glob, make: _file.make }) };
 }
 
 function FileUpdated(cfg: VerdaConfig) {
 	const prefix = "Builtin::FileUpdated::";
-	const rule = new FileUpdatedRule(cfg, prefix, s => [s]);
-	return { gb: GoalBuilder<FileStatInfo, Args, string>(rule), rule };
+	const matcher = new KindMatcherT(prefix, new FilePathMatcherT(cfg, new AlwaysMatcher()));
+	const rule = new FileUpdatedRule(matcher);
+	return { gb: GoalBuilder<FileStatInfo, FileExecArgs, string>(matcher, rule), rule };
 }
 
 function FileExists(cfg: VerdaConfig) {
 	const prefix = "Builtin::FileExists::";
-	const rule = new FileExistsRule(cfg, prefix, s => [s]);
-	return { gb: GoalBuilder<FileStatInfo, Args, string>(rule), rule };
+	const matcher = new KindMatcherT(prefix, new FilePathMatcherT(cfg, new AlwaysMatcher()));
+	const rule = new FileExistsRule(matcher);
+	return { gb: GoalBuilder<FileStatInfo, FileExecArgs, string>(matcher, rule), rule };
 }
 
 function DirExists(cfg: VerdaConfig) {
 	const prefix = "Builtin::DirExists::";
-	const rule = new DirExistsRule(cfg, prefix, s => [s]);
-	return { gb: GoalBuilder<FileStatInfo, Args, string>(rule), rule };
+	const matcher = new KindMatcherT(prefix, new FilePathMatcherT(cfg, new AlwaysMatcher()));
+	const rule = new DirExistsRule(matcher);
+	return { gb: GoalBuilder<FileStatInfo, FileExecArgs, string>(matcher, rule), rule };
 }
 
-function DirContent(cfg: VerdaConfig, gfu: GoalFunction<FileStatInfo, Args>) {
+function DirContent(cfg: VerdaConfig, gfu: GoalFunction<FileStatInfo, FileExecArgs>) {
 	const prefix = "Builtin::DirContent::";
 
 	let gfDC: GoalFunction<DirContents, string[]>;
-	const rule = new OracleRule(
-		true,
-		prefix,
-		s => [s],
-		(t, path) => getDirContents(false, t, getRegularPath(cfg.cwd, path), gfu, gfDC)
+	const matcher = new KindMatcherT(prefix, new AlwaysMatcher());
+	const rule = new OracleRule(true, matcher, (t, path) =>
+		getDirContents(false, t, getRegularPath(cfg.cwd, path), gfu, gfDC)
 	);
-	gfDC = GoalBuilder<DirContents, string[], string>(rule);
+	gfDC = GoalBuilder<DirContents, string[], string>(matcher, rule);
 
 	return { gb: gfDC, rule };
 }
 
-function DirStructure(cfg: VerdaConfig, gfu: GoalFunction<FileStatInfo, Args>) {
+function DirStructure(cfg: VerdaConfig, gfu: GoalFunction<FileStatInfo, FileExecArgs>) {
 	const prefix = "Builtin::DirStructure::";
 
 	let gfDC: GoalFunction<DirContents, string[]>;
-	const rule = new OracleRule(
-		true,
-		prefix,
-		s => [s],
-		(t, path) => getDirContents(true, t, getRegularPath(cfg.cwd, path), gfu, gfDC)
+	const matcher = new KindMatcherT(prefix, new AlwaysMatcher());
+	const rule = new OracleRule(true, matcher, (t, path) =>
+		getDirContents(true, t, getRegularPath(cfg.cwd, path), gfu, gfDC)
 	);
-	gfDC = GoalBuilder<DirContents, string[], string>(rule);
+	gfDC = GoalBuilder<DirContents, string[], string>(matcher, rule);
 
 	return { gb: gfDC, rule };
 }

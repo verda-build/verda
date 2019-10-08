@@ -4,15 +4,14 @@ import Director from "../core/director";
 import {
 	ExportBuildRecipe,
 	ExtBuildContext,
-	MatchFunction,
+	GoalMatcher,
 	PreBuildContext,
 	PreBuildResult,
 	Rule
 } from "../core/interface";
-import { NonPosixifyPatternMatch } from "../match";
 
 import { RuleBase } from "./rule-base";
-import { GoalBuilder, SinglePlural_T } from "./util";
+import { SinglePlural_T } from "./util";
 
 type Args = string[];
 
@@ -21,11 +20,10 @@ export class OracleRule<T> extends RuleBase<Args> implements Rule<T, Args> {
 
 	constructor(
 		private isOracle: boolean,
-		prefix: string,
-		pattern: string | MatchFunction<Args>,
+		matcher: GoalMatcher<Args>,
 		private FRecipe: ExportBuildRecipe<T, Args>
 	) {
-		super(prefix, pattern instanceof Function ? pattern : NonPosixifyPatternMatch(pattern));
+		super(matcher);
 	}
 
 	// Oracles never match string intakes - use strongly typed goals instead!
@@ -56,22 +54,26 @@ export class OracleRule<T> extends RuleBase<Args> implements Rule<T, Args> {
 }
 
 export function Oracle(dir: Director) {
-	const _oracle = SinglePlural_T<Args>(
+	const _oracle = SinglePlural_T(
 		"Builtin::Oracle::",
 		dir,
-		(s: string) => [s],
-		(prefix, pattern, FRecipe) => new OracleRule(true, prefix, pattern, FRecipe)
+		(matcher, FRecipe) => new OracleRule(true, matcher, FRecipe)
 	);
-	const _computed = SinglePlural_T<Args>(
+	const _computed = SinglePlural_T(
 		"Builtin::Computed::",
 		dir,
-		(s: string) => [s],
-		(prefix, pattern, FRecipe) => new OracleRule(false, prefix, pattern, FRecipe)
+		(matcher, FRecipe) => new OracleRule(false, matcher, FRecipe)
 	);
 	return {
-		oracle: _oracle.exact,
-		oracles: Object.assign(_oracle.patterned, { group: _oracle.subPrefix }),
-		computed: _computed.exact,
-		computes: Object.assign(_computed.patterned, { group: _computed.subPrefix })
+		oracle: Object.assign(_oracle.exact, {
+			glob: _oracle.glob,
+			group: _oracle.subPrefix,
+			make: _oracle.make
+		}),
+		computed: Object.assign(_computed.exact, {
+			glob: _computed.glob,
+			group: _computed.subPrefix,
+			make: _computed.make
+		})
 	};
 }

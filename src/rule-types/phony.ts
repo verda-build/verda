@@ -2,13 +2,14 @@ import Director from "../core/director";
 import {
 	ExportBuildRecipe,
 	ExtBuildContext,
-	MatchFunction,
+	GoalMatcher,
 	PreBuildContext,
 	PreBuildResult,
 	Rule
 } from "../core/interface";
 import { NonPosixifyPatternMatch } from "../match";
 
+import { GlobMatcher } from "./matchers";
 import { RuleBase } from "./rule-base";
 import { SinglePlural_T } from "./util";
 
@@ -17,12 +18,8 @@ type Args = string[];
 class PhonyRule<T> extends RuleBase<Args> implements Rule<T, Args> {
 	readonly kindTag = "Builtin::PhonyRule";
 
-	constructor(
-		prefix: string,
-		pattern: string | MatchFunction<Args>,
-		private FRecipe: ExportBuildRecipe<T, Args>
-	) {
-		super(prefix, pattern instanceof Function ? pattern : NonPosixifyPatternMatch(pattern));
+	constructor(matcher: GoalMatcher<Args>, private FRecipe: ExportBuildRecipe<T, Args>) {
+		super(matcher);
 	}
 
 	async build(t: ExtBuildContext<T>, ...args: Args) {
@@ -39,14 +36,16 @@ class PhonyRule<T> extends RuleBase<Args> implements Rule<T, Args> {
 }
 
 export function Phony(dir: Director) {
-	const _phony = SinglePlural_T<Args>(
+	const _phony = SinglePlural_T(
 		"Builtin::Phony::",
 		dir,
-		(s: string) => [s],
-		(prefix, pattern, FRecipe) => new PhonyRule(prefix, pattern, FRecipe)
+		(matcher, FRecipe) => new PhonyRule(matcher, FRecipe)
 	);
 	return {
-		phony: _phony.exact,
-		phonies: Object.assign(_phony.patterned, { group: _phony.subPrefix })
+		phony: Object.assign(_phony.exact, {
+			glob: _phony.glob,
+			group: _phony.subPrefix,
+			make: _phony.make
+		})
 	};
 }

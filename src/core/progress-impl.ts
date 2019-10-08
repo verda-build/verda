@@ -1,4 +1,11 @@
-import { Arbitrator, BuildStatus, PreBuildResult, PreBuildStatus, Progress } from "./interface";
+import {
+	Arbitrator,
+	BuildStatus,
+	Dependency,
+	PreBuildResult,
+	PreBuildStatus,
+	Progress
+} from "./interface";
 
 type AcceptHandler<T> = (result: T) => void;
 type ModifiedHandler = (yes: PreBuildResult) => void;
@@ -13,7 +20,7 @@ export default class ProgressImpl<T> implements Progress<T> {
 	status: BuildStatus = BuildStatus.NOT_STARTED;
 	preBuildStatus: PreBuildStatus = PreBuildStatus.UNKNOWN;
 	preBuildResult: PreBuildResult = PreBuildResult.YES;
-	dependencies: Set<string>[] = [];
+	dependencies: Dependency[][] = [];
 	volatile: boolean = true;
 
 	revision: number = 0;
@@ -142,7 +149,7 @@ export default class ProgressImpl<T> implements Progress<T> {
 	fromJson(j: any) {
 		this.volatile = j.volatile;
 		this.lastResult = this.result = j.result;
-		this.dependencies = j.dependencies.map((g: any) => new Set(g));
+		this.dependencies = j.dependencies;
 		this.revision = j.revision || 0;
 	}
 }

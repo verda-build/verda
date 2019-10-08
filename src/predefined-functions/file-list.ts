@@ -1,13 +1,13 @@
 import * as path from "path";
 
-import { BuildContext, GoalFunction, MatchFunction } from "../core/interface";
+import { BuildContext, GoalFunction } from "../core/interface";
 import { PatternMatch } from "../match";
 import { DirContents } from "../match/interface";
 import posixifyPath from "../match/posixify-path";
 
 export interface FileListDefinitionOptions {
 	under: string;
-	pattern?: MatchFunction<string[]> | string;
+	pattern?: string;
 	transform?: (full: string, from: string, ...parts: string[]) => string;
 }
 
@@ -29,8 +29,7 @@ function fileListExec(
 	dsg: GoalFunction<DirContents, string[]>
 ) {
 	const { under: dir, pattern, transform } = options;
-	const mf: MatchFunction<string[]> =
-		pattern instanceof Function ? pattern : pattern ? PatternMatch(pattern) : () => [];
+	const mf = pattern ? PatternMatch(pattern) : () => [];
 
 	return async function(target: BuildContext) {
 		const [fo] = await target.order(dsg`${dir}`);
