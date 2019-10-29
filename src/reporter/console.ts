@@ -1,6 +1,8 @@
 import chalk from "chalk";
 import * as util from "util";
 
+import { getExtErrorProps } from "../errors";
+
 import { Reporter } from ".";
 import {
 	ActionLogHighlighter,
@@ -195,7 +197,16 @@ export default class ConsoleReporter implements Reporter {
 	}
 	targetError(id: string, err: Error) {
 		if (this.reportedErrors.has(err)) return;
-		this.error(`Unhandled exception when building "${id}":\n`, chalk.gray(util.inspect(err)));
+		const ext = getExtErrorProps(err);
+		if (ext && ext.hide) return;
+		if (ext && ext.system) {
+			this.error(err.message);
+		} else {
+			this.error(
+				`Unhandled exception when building "${id}":\n`,
+				chalk.gray(util.inspect(err))
+			);
+		}
 		this.reportedErrors.add(err);
 	}
 	targetHalt(name: string) {
@@ -243,7 +254,7 @@ export default class ConsoleReporter implements Reporter {
 			for (let k = 0; k < line.length; k++) {
 				const term = line[k];
 				let segText = style.escape(term, j, k).replace(/[\r\n]+/g, " ");
-				if (lengthSofar + segText.length >= len) {
+				if (this.verbosity < 8 && lengthSofar + segText.length >= len) {
 					const remainingLength = len - lengthSofar - style.trail.length;
 					if (remainingLength > 0) {
 						const segText1 = segText.slice(0, remainingLength);

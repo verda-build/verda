@@ -75,10 +75,14 @@ export class Session implements ISession {
 
 	async loadJournal() {
 		if (!this.config.journal) return;
+		let json: any = null;
 		if (await fs.pathExists(this.config.journal)) {
-			const json = await fs.readJson(this.config.journal);
-			this.director.fromJson(json);
-		} else {
+			try {
+				json = await fs.readJson(this.config.journal);
+			} catch (e) {}
+		}
+		if (json) json = this.director.fromJson(json);
+		if (!json) {
 			await fs.ensureFile(this.config.journal);
 			await fs.writeFile(this.config.journal, "{}");
 		}

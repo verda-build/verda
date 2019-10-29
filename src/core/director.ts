@@ -1,5 +1,6 @@
 import Semaphore from "semaphore-async-await";
 
+import { createExtError } from "../errors";
 import { Reporter } from "../reporter";
 import { QuietReporter } from "../reporter/quiet";
 
@@ -66,16 +67,24 @@ export default class Director implements Arbitrator {
 	}
 
 	ruleNotFound(id: string) {
-		return new Error(`Building rule for ${id} is not found.`);
+		return createExtError(new Error(`Building rule for ${id} is not found.`), { system: true });
 	}
 	dependencyNotFound(id: string, against: string) {
-		return new Error(`Building rule for ${id} is not found, which is needed by ${against}.`);
+		return createExtError(
+			new Error(`Building rule for ${id} is not found, which is needed by ${against}.`),
+			{ system: true }
+		);
 	}
 	tryToBuildWithDifferentRule(id: string) {
-		return new Error(`Trying to build objective ${id} with a different rule.`);
+		return createExtError(new Error(`Trying to build objective ${id} with a different rule.`), {
+			system: true
+		});
 	}
 	cancelled(id: string) {
-		return new Error(`Build for ${id} is cancelled.`);
+		return createExtError(new Error(`Build for ${id} is cancelled.`), {
+			system: true,
+			hide: true
+		});
 	}
 
 	getProgress(goalID: string) {
@@ -164,9 +173,9 @@ export default class Director implements Arbitrator {
 		const proxy = new BuildContextImpl(target, this);
 		let r = undefined;
 		try {
-			r = await target.progress.start(this, async () => {
-				return await target.goal.rule.build(proxy, ...target.matchResult);
-			});
+			r = await target.progress.start(this, () =>
+				target.goal.rule.build(proxy, ...target.matchResult)
+			);
 		} catch (e) {
 			this.someTargetWrong = true;
 			throw e;
@@ -196,7 +205,7 @@ export default class Director implements Arbitrator {
 		this.updateBuildRev();
 		let deps: Set<Objective<any>> = new Set();
 		getObjectivesOfDepArgs(this, null, args, deps);
-		await Promise.all([...deps].map(dep => this.buildTarget(dep)));
+		await PromiseAllCatch([...deps].map(dep => this.buildTarget(dep)));
 		return getResultsOfDepArgs(this, null, args);
 	}
 
@@ -218,11 +227,12 @@ export default class Director implements Arbitrator {
 	}
 
 	fromJson(json: any) {
-		if (json.journalVersion !== JOURNAL_VERSION) return;
+		if (json.journalVersion !== JOURNAL_VERSION) return null;
 		for (const id in json.entries) {
 			const p = this.getProgress(id);
 			p.fromJson(json.entries[id]);
 		}
+		return json;
 	}
 
 	toJson(): any {
@@ -301,7 +311,7 @@ export class PreBuildContextImpl implements PreBuildContext<any> {
 			const deps = [...group];
 			let triggered = [];
 			try {
-				triggered = await Promise.all(
+				triggered = await PromiseAllCatch(
 					deps.map(dep => {
 						const g = this.director.queryGoal(false, dep.id, dep.args);
 						if (!g) throw this.director.ruleNotFound(dep.id);
@@ -506,9 +516,9 @@ class BuildContextImpl implements ExtBuildContext<any> {
 		);
 		for (const d of deps) rd.add(d);
 		this.checkCircular(deps);
-		const dependencyPromises = [...deps].map(t => this.director.buildTarget(t));
 		await this.objective.progress.halt(this.director);
-		await Promise.all(dependencyPromises);
+		const dependencyPromises = [...deps].map(t => this.director.buildTarget(t));
+		await PromiseAllCatch(dependencyPromises);
 		await this.objective.progress.unhalt(this.director);
 	}
 
@@ -540,4 +550,25 @@ class BuildContextImpl implements ExtBuildContext<any> {
 		this._needed(deps);
 		return getResultsOfDepArgs(this.director, this.objective, args);
 	}
+}
+
+type PromiseResult<T> = { status: "fulfilled"; value: T } | { status: "rejected"; reason: any };
+async function PromiseAllCatch<T>($: ReadonlyArray<Promise<T>>) {
+	const rawResults: PromiseResult<T>[] = await Promise.all(
+		$.map(prom =>
+			prom
+				.then(value => ({ status: "fulfilled" as "fulfilled", value: value }))
+				.catch(reason => ({ status: "rejected" as "rejected", reason: reason }))
+		)
+	);
+
+	let results: T[] = [];
+	for (const result of rawResults) {
+		if (result.status === "rejected") {
+			throw result.reason;
+		} else {
+			results.push(result.value);
+		}
+	}
+	return results;
 }

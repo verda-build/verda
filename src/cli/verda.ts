@@ -1,5 +1,6 @@
 import * as yargs from "yargs";
 
+import { getExtErrorProps } from "../errors";
 import { Session } from "../session";
 
 import { searchConfig } from "./search-config";
@@ -11,8 +12,11 @@ process.chdir(cwd);
 process.once("SIGINT", () => process.exit(1)).once("SIGTERM", () => process.exit(1));
 
 main(rulePath).catch(e => {
-	console.error("");
-	console.error(e);
+	const ext = getExtErrorProps(e);
+	if (!ext) {
+		console.error("");
+		console.error(e);
+	}
 	process.exit(1);
 });
 
