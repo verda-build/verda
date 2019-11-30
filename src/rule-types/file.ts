@@ -160,6 +160,71 @@ export class FileUpdatedRule extends RuleBase<FileExecArgs>
 		return changed ? PreBuildResult.YES : PreBuildResult.TIME;
 	}
 }
+
+export class OptionalFileUpdatedRule extends RuleBase<FileExecArgs>
+	implements Rule<FileStatInfo, FileExecArgs> {
+	readonly kindTag = "Builtin::OptionalFileUpdateRule";
+
+	constructor(matcher: GoalMatcher<FileExecArgs>) {
+		super(matcher);
+	}
+
+	async build(target: ExtBuildContext<FileStatInfo>, $1: ParsedPathImpl) {
+		const u = await pathParseAndUpdate($1.full);
+		if (!u) {
+			target.is.modified();
+			return u;
+		}
+		if (
+			!target.lastResult ||
+			u.present !== target.lastResult.present ||
+			target.lastResult.hash !== u.hash
+		) {
+			target.is.modified();
+		} else {
+			target.is.not.modified();
+		}
+		return u;
+	}
+	async preBuild(target: PreBuildContext<FileStatInfo>, $1: ParsedPathImpl) {
+		const changed =
+			target.isVolatile || !(await fs.pathExists($1.full)) || (await target.cutoffEarly());
+		return changed ? PreBuildResult.YES : PreBuildResult.TIME;
+	}
+}
+
+export class SourceFileUpdatedRule extends RuleBase<FileExecArgs>
+	implements Rule<FileStatInfo, FileExecArgs> {
+	readonly kindTag = "Builtin::SourceFileUpdatedRule";
+
+	constructor(matcher: GoalMatcher<FileExecArgs>) {
+		super(matcher);
+	}
+
+	async build(target: ExtBuildContext<FileStatInfo>, $1: ParsedPathImpl) {
+		const u = await pathParseAndUpdate($1.full);
+		if (!u.present) {
+			throw new Error(`File ${$1.full} is required but missing.`);
+		}
+		if (
+			!u.present ||
+			!target.lastResult ||
+			!target.lastResult.present ||
+			target.lastResult.hash !== u.hash
+		) {
+			target.is.modified();
+		} else {
+			target.is.not.modified();
+		}
+		return u;
+	}
+	async preBuild(target: PreBuildContext<FileStatInfo>, $1: ParsedPathImpl) {
+		const changed =
+			target.isVolatile || !(await fs.pathExists($1.full)) || (await target.cutoffEarly());
+		return changed ? PreBuildResult.YES : PreBuildResult.TIME;
+	}
+}
+
 export class FileExistsRule extends RuleBase<FileExecArgs>
 	implements Rule<FileStatInfo, FileExecArgs> {
 	readonly kindTag = "Builtin::FileExistsRule";
@@ -223,6 +288,18 @@ function FileUpdated(cfg: VerdaConfig) {
 	const rule = new FileUpdatedRule(matcher);
 	return { gb: GoalBuilder<FileStatInfo, FileExecArgs, string>(matcher, rule), rule };
 }
+function OptionalFileUpdated(cfg: VerdaConfig) {
+	const prefix = "Builtin::OptionalFileUpdated::";
+	const matcher = new KindMatcherT(prefix, new FilePathMatcherT(cfg, new AlwaysMatcher()));
+	const rule = new OptionalFileUpdatedRule(matcher);
+	return { gb: GoalBuilder<FileStatInfo, FileExecArgs, string>(matcher, rule), rule };
+}
+function SourceFileUpdated(cfg: VerdaConfig) {
+	const prefix = "Builtin::SourceFileUpdated::";
+	const matcher = new KindMatcherT(prefix, new FilePathMatcherT(cfg, new AlwaysMatcher()));
+	const rule = new SourceFileUpdatedRule(matcher);
+	return { gb: GoalBuilder<FileStatInfo, FileExecArgs, string>(matcher, rule), rule };
+}
 
 function FileExists(cfg: VerdaConfig) {
 	const prefix = "Builtin::FileExists::";
@@ -266,6 +343,8 @@ function DirStructure(cfg: VerdaConfig, gfu: GoalFunction<FileStatInfo, FileExec
 
 export function ImplicitFileRules(cfg: VerdaConfig, dir: Director) {
 	const fu = FileUpdated(cfg);
+	const sfu = SourceFileUpdated(cfg);
+	const ofu = OptionalFileUpdated(cfg);
 	const fe = FileExists(cfg);
 	const de = DirExists(cfg);
 	const dc = DirContent(cfg, fu.gb);
@@ -286,12 +365,24 @@ export function ImplicitFileRules(cfg: VerdaConfig, dir: Director) {
 	fu.rule.ignoreStringMatch = true;
 	fu.rule.isUser = false;
 	dir.addRule(fu.rule);
+	sfu.rule.ignoreStringMatch = true;
+	sfu.rule.isUser = false;
+	dir.addRule(sfu.rule);
+	ofu.rule.ignoreStringMatch = true;
+	ofu.rule.isUser = false;
+	dir.addRule(ofu.rule);
 
 	return {
 		F: fu.gb,
+		S: sfu.gb,
 		D: de.gb,
+
 		fu: fu.gb,
 		fileUpdated: fu.gb,
+		sfu: sfu.gb,
+		sourceFileUpdated: sfu.gb,
+		ofu: ofu.gb,
+		optionalFileUpdated: ofu.gb,
 		fe: fe.gb,
 		fileExists: fe.gb,
 		de: de.gb,
