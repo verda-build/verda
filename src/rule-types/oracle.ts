@@ -1,4 +1,4 @@
-import * as equal from "fast-deep-equal";
+import equal from "fast-deep-equal";
 
 import Director from "../core/director";
 import {

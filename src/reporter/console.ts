@@ -3,7 +3,7 @@ import * as util from "util";
 
 import { getExtErrorProps } from "../errors";
 
-import { Reporter } from ".";
+import { Reporter } from "./index";
 import {
 	ActionLogHighlighter,
 	commandStylizer,
@@ -286,7 +286,7 @@ export default class ConsoleReporter implements Reporter {
 	actions(commands: string[][], style?: string) {
 		if (this.verbosity < 6) return;
 		this.rawLog(
-			this.directive("blue", "♦", ""),
+			this.directive("blueBright", "♦", ""),
 			this.extractFirstLine(commands, this.columns, this.getStyle(style || ""))
 		);
 	}

@@ -24,7 +24,7 @@ export const commandStylizer: ActionLogHighlighter = {
 	},
 	stylize(term: any, lineNo: number, termNo: number, text: string, slicedText: string): string {
 		if (termNo === -1) return chalk.cyanBright(slicedText);
-		if (termNo === 0) return chalk.blue.underline(slicedText);
+		if (termNo === 0) return chalk.blueBright.underline(slicedText);
 		if (typeof term !== "string") return slicedText;
 		if (/^-/.test(text)) return chalk.yellow(slicedText);
 		if (/^'/.test(text)) return chalk.green(slicedText);
