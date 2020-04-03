@@ -1,11 +1,8 @@
-import * as path from "path";
-
 import { VerdaConfig } from "../config";
 import { Dependency, GoalMatcher, RuleMatchResult } from "../core/interface";
 import { NonPosixifyPatternMatch } from "../match";
 import { ParsedPath } from "../match/interface";
 import ParsedPathImpl from "../match/parse-path";
-import posixifyPath from "../match/posixify-path";
 
 export class AlwaysMatcher implements GoalMatcher<[string]> {
 	constructor() {}
@@ -143,6 +140,19 @@ export class PrefixMatcherT<A> implements GoalMatcher<A> {
 	matchGoalID(id: string, args: string[]) {
 		if (!id.startsWith(this.prefix)) return null;
 		return this.wrapNullable(this.inner.matchGoalID(id.slice(this.prefix.length), args));
+	}
+}
+
+export class NoStringMatcherT<A> implements GoalMatcher<A> {
+	constructor(private readonly inner: GoalMatcher<A>) {}
+	createGoalIdFromArgs(args: string[]) {
+		return this.inner.createGoalIdFromArgs(args);
+	}
+	matchString(name: string) {
+		return null;
+	}
+	matchGoalID(id: string, args: string[]) {
+		return this.inner.matchGoalID(id, args);
 	}
 }
 

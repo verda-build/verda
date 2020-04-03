@@ -109,6 +109,7 @@ export class Session implements ISession {
 			}
 			await this.director.want(...args);
 		} catch (e) {
+			this.reporter.systemError(e);
 			this.reporter.end(true);
 			throw e;
 		}

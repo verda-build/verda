@@ -26,6 +26,9 @@ export class ProxyReporter implements Reporter {
 	targetUnHalt(name: string) {
 		this.real().targetUnHalt(name);
 	}
+	systemError(e: Error) {
+		this.real().systemError(e);
+	}
 	targetError(name: string, e: Error) {
 		this.real().targetError(name, e);
 	}

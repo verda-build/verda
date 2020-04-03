@@ -7,7 +7,6 @@ import {
 	PreBuildResult,
 	Rule
 } from "../core/interface";
-
 import { ExactMatcher, KindMatcherT } from "./matchers";
 import { RuleBase } from "./rule-base";
 import { GoalBuilder } from "./util";

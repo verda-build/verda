@@ -67,21 +67,24 @@ export default class Director implements Arbitrator {
 	}
 
 	ruleNotFound(id: string) {
-		return createExtError(new Error(`Building rule for ${id} is not found.`), { system: true });
+		return createExtError(new Error(`Building rule for '${id}' is not found.`), {
+			system: true
+		});
 	}
 	dependencyNotFound(id: string, against: string) {
 		return createExtError(
-			new Error(`Building rule for ${id} is not found, which is needed by ${against}.`),
+			new Error(`Building rule for '${id}' is not found, which is needed by '${against}'.`),
 			{ system: true }
 		);
 	}
 	tryToBuildWithDifferentRule(id: string) {
-		return createExtError(new Error(`Trying to build objective ${id} with a different rule.`), {
-			system: true
-		});
+		return createExtError(
+			new Error(`Trying to build objective '${id}' with a different rule.`),
+			{ system: true }
+		);
 	}
 	cancelled(id: string) {
-		return createExtError(new Error(`Build for ${id} is cancelled.`), {
+		return createExtError(new Error(`Build for '${id}' is cancelled.`), {
 			system: true,
 			hide: true
 		});

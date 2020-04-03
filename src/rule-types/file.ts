@@ -19,7 +19,13 @@ import ParsedPathImpl from "../match/parse-path";
 import posixifyPath from "../match/posixify-path";
 
 import { FileStatInfo } from "./interface";
-import { AlwaysMatcher, FileExecArgs, FilePathMatcherT, KindMatcherT } from "./matchers";
+import {
+	AlwaysMatcher,
+	FileExecArgs,
+	FilePathMatcherT,
+	KindMatcherT,
+	NoStringMatcherT
+} from "./matchers";
 import { OracleRule } from "./oracle";
 import { RuleBase } from "./rule-base";
 import { GoalBuilder, SinglePlural_F } from "./util";
@@ -284,42 +290,49 @@ export function File(cfg: VerdaConfig, dir: Director) {
 
 function FileUpdated(cfg: VerdaConfig) {
 	const prefix = "Builtin::FileUpdated::";
-	const matcher = new KindMatcherT(prefix, new FilePathMatcherT(cfg, new AlwaysMatcher()));
+	const matcher = new NoStringMatcherT(
+		new KindMatcherT(prefix, new FilePathMatcherT(cfg, new AlwaysMatcher()))
+	);
 	const rule = new FileUpdatedRule(matcher);
 	return { gb: GoalBuilder<FileStatInfo, FileExecArgs, string>(matcher, rule), rule };
 }
 function OptionalFileUpdated(cfg: VerdaConfig) {
 	const prefix = "Builtin::OptionalFileUpdated::";
-	const matcher = new KindMatcherT(prefix, new FilePathMatcherT(cfg, new AlwaysMatcher()));
+	const matcher = new NoStringMatcherT(
+		new KindMatcherT(prefix, new FilePathMatcherT(cfg, new AlwaysMatcher()))
+	);
 	const rule = new OptionalFileUpdatedRule(matcher);
 	return { gb: GoalBuilder<FileStatInfo, FileExecArgs, string>(matcher, rule), rule };
 }
 function SourceFileUpdated(cfg: VerdaConfig) {
 	const prefix = "Builtin::SourceFileUpdated::";
-	const matcher = new KindMatcherT(prefix, new FilePathMatcherT(cfg, new AlwaysMatcher()));
+	const matcher = new NoStringMatcherT(
+		new KindMatcherT(prefix, new FilePathMatcherT(cfg, new AlwaysMatcher()))
+	);
 	const rule = new SourceFileUpdatedRule(matcher);
 	return { gb: GoalBuilder<FileStatInfo, FileExecArgs, string>(matcher, rule), rule };
 }
-
 function FileExists(cfg: VerdaConfig) {
 	const prefix = "Builtin::FileExists::";
-	const matcher = new KindMatcherT(prefix, new FilePathMatcherT(cfg, new AlwaysMatcher()));
+	const matcher = new NoStringMatcherT(
+		new KindMatcherT(prefix, new FilePathMatcherT(cfg, new AlwaysMatcher()))
+	);
 	const rule = new FileExistsRule(matcher);
 	return { gb: GoalBuilder<FileStatInfo, FileExecArgs, string>(matcher, rule), rule };
 }
-
 function DirExists(cfg: VerdaConfig) {
 	const prefix = "Builtin::DirExists::";
-	const matcher = new KindMatcherT(prefix, new FilePathMatcherT(cfg, new AlwaysMatcher()));
+	const matcher = new NoStringMatcherT(
+		new KindMatcherT(prefix, new FilePathMatcherT(cfg, new AlwaysMatcher()))
+	);
 	const rule = new DirExistsRule(matcher);
 	return { gb: GoalBuilder<FileStatInfo, FileExecArgs, string>(matcher, rule), rule };
 }
-
 function DirContent(cfg: VerdaConfig, gfu: GoalFunction<FileStatInfo, FileExecArgs>) {
 	const prefix = "Builtin::DirContent::";
 
 	let gfDC: GoalFunction<DirContents, string[]>;
-	const matcher = new KindMatcherT(prefix, new AlwaysMatcher());
+	const matcher = new NoStringMatcherT(new KindMatcherT(prefix, new AlwaysMatcher()));
 	const rule = new OracleRule(true, matcher, (t, path) =>
 		getDirContents(false, t, getRegularPath(cfg.cwd, path), gfu, gfDC)
 	);
@@ -327,12 +340,11 @@ function DirContent(cfg: VerdaConfig, gfu: GoalFunction<FileStatInfo, FileExecAr
 
 	return { gb: gfDC, rule };
 }
-
 function DirStructure(cfg: VerdaConfig, gfu: GoalFunction<FileStatInfo, FileExecArgs>) {
 	const prefix = "Builtin::DirStructure::";
 
 	let gfDC: GoalFunction<DirContents, string[]>;
-	const matcher = new KindMatcherT(prefix, new AlwaysMatcher());
+	const matcher = new NoStringMatcherT(new KindMatcherT(prefix, new AlwaysMatcher()));
 	const rule = new OracleRule(true, matcher, (t, path) =>
 		getDirContents(true, t, getRegularPath(cfg.cwd, path), gfu, gfDC)
 	);

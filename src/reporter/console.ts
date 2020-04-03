@@ -195,6 +195,17 @@ export default class ConsoleReporter implements Reporter {
 		this.finishedTargets.add(id);
 		this.progressMessage();
 	}
+	systemError(err: Error) {
+		if (this.reportedErrors.has(err)) return;
+		const ext = getExtErrorProps(err);
+		if (ext && ext.hide) return;
+		if (ext && ext.system) {
+			this.error(err.message);
+		} else {
+			this.error(util.inspect(err));
+		}
+		this.reportedErrors.add(err);
+	}
 	targetError(id: string, err: Error) {
 		if (this.reportedErrors.has(err)) return;
 		const ext = getExtErrorProps(err);

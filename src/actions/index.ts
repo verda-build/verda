@@ -5,13 +5,15 @@ import { createKit_Echo } from "./echo";
 import { createKit_File } from "./file";
 import { ActionEnv, Dict } from "./interfaces";
 import { createKit_NodeJS } from "./nodejs/command";
+import { createKit_Fail } from "./fail";
 
 function defaultActions(ce: ActionEnv) {
 	return {
 		...createKit_Command(ce),
 		...createKit_NodeJS(ce),
 		...createKit_Echo(ce),
-		...createKit_File(ce)
+		...createKit_File(ce),
+		...createKit_Fail(ce)
 	};
 }
 

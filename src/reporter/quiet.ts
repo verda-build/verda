@@ -10,6 +10,7 @@ export class QuietReporter implements Reporter {
 	targetEnd(name: string) {}
 	targetHalt(name: string) {}
 	targetUnHalt(name: string) {}
+	systemError(e: Error) {}
 	targetError(name: string, e: Error) {}
 
 	// STDOUT/STDERR redirection
