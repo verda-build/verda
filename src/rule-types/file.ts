@@ -11,7 +11,7 @@ import {
 	GoalMatcher,
 	PreBuildContext,
 	PreBuildResult,
-	Rule
+	Rule,
 } from "../core/interface";
 import { hashFile, hashSmallFile } from "../file-hasher/host";
 import { DirContents } from "../match/interface";
@@ -24,7 +24,7 @@ import {
 	FileExecArgs,
 	FilePathMatcherT,
 	KindMatcherT,
-	NoStringMatcherT
+	NoStringMatcherT,
 } from "./matchers";
 import { OracleRule } from "./oracle";
 import { RuleBase } from "./rule-base";
@@ -193,8 +193,7 @@ export class OptionalFileUpdatedRule extends RuleBase<FileExecArgs>
 		return u;
 	}
 	async preBuild(target: PreBuildContext<FileStatInfo>, $1: ParsedPathImpl) {
-		const changed =
-			target.isVolatile || !(await fs.pathExists($1.full)) || (await target.cutoffEarly());
+		const changed = target.isVolatile || (await target.cutoffEarly());
 		return changed ? PreBuildResult.YES : PreBuildResult.TIME;
 	}
 }
@@ -402,6 +401,6 @@ export function ImplicitFileRules(cfg: VerdaConfig, dir: Director) {
 		dc: dc.gb,
 		dirContent: dc.gb,
 		ds: ds.gb,
-		dirStructure: ds.gb
+		dirStructure: ds.gb,
 	};
 }

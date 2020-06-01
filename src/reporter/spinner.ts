@@ -4,7 +4,9 @@ import * as readline from "readline";
 import stripAnsi from "strip-ansi";
 
 // No idea how to detect whether the console font supports all the characters
-const dumbConsole = process.platform === "win32";
+const isLegacyConsole =
+	process.platform === "win32" &&
+	!(process.env.TERM_PROGRAM === "vscode" || !!process.env.WT_SESSION);
 
 const spinnerInterval = 100;
 const spinnerFrames = [
@@ -76,7 +78,7 @@ export default class Spinner {
 	textSource: SpinnerTextSource | null = null;
 	private lastTextSize: number = 0;
 	private frame: number = 0;
-	private frames: string[] = dumbConsole ? spinnerFramesCP437 : spinnerFrames;
+	private frames: string[] = isLegacyConsole ? spinnerFramesCP437 : spinnerFrames;
 	private interval: number = spinnerInterval;
 	private enabled: boolean = true;
 	private currentFrameWritten: boolean = false;
