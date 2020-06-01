@@ -63,7 +63,7 @@ const spinnerFrames = [
 	"⠀⡐",
 	"⠀⠠",
 	"⠀⢀",
-	"⠀⡀"
+	"⠀⡀",
 ];
 
 const spinnerFramesCP437 = ["-", "\\", "|", "/"];
@@ -74,18 +74,20 @@ export interface SpinnerTextSource {
 
 export default class Spinner {
 	textSource: SpinnerTextSource | null = null;
-	lastTextSize: number = 0;
-	frame: number = 0;
-	frames: string[] = dumbConsole ? spinnerFramesCP437 : spinnerFrames;
-	interval: number = spinnerInterval;
-	stream = process.stderr;
-	enabled: boolean = true;
-	currentFrameWritten: boolean = false;
+	private lastTextSize: number = 0;
+	private frame: number = 0;
+	private frames: string[] = dumbConsole ? spinnerFramesCP437 : spinnerFrames;
+	private interval: number = spinnerInterval;
+	private enabled: boolean = true;
+	private currentFrameWritten: boolean = false;
 
 	private id: null | NodeJS.Timer = null;
 
+	private stream = process.stderr;
+	private outputIsTty = process.stdout.isTTY && process.stderr.isTTY;
+
 	clear() {
-		if (!this.enabled || !this.stream.isTTY) return;
+		if (!this.enabled || !this.outputIsTty) return;
 		readline.clearLine(this.stream, 0);
 		readline.cursorTo(this.stream, 0);
 		this.lastTextSize = 0;
@@ -96,7 +98,7 @@ export default class Spinner {
 	}
 
 	nextFrame() {
-		if (!this.enabled || !this.stream.isTTY) return;
+		if (!this.enabled || !this.outputIsTty) return;
 
 		readline.cursorTo(this.stream, 0);
 		const text = this.getText();

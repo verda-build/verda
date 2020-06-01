@@ -16,7 +16,7 @@ import {
 	PreBuildStatus,
 	PrimOrderGoalType,
 	Progress,
-	Rule
+	Rule,
 } from "./interface";
 import ProgressImpl from "./progress-impl";
 
@@ -29,7 +29,7 @@ interface Objective<A extends any[]> {
 }
 
 export function SleepPromise(dt: number) {
-	return new Promise<null>(resolve => {
+	return new Promise<null>((resolve) => {
 		setTimeout(() => resolve(null), dt);
 	});
 }
@@ -58,7 +58,7 @@ export default class Director implements Arbitrator {
 		return {
 			matchResult,
 			goal,
-			progress
+			progress,
 		};
 	}
 
@@ -68,7 +68,7 @@ export default class Director implements Arbitrator {
 
 	ruleNotFound(id: string) {
 		return createExtError(new Error(`Building rule for '${id}' is not found.`), {
-			system: true
+			system: true,
 		});
 	}
 	dependencyNotFound(id: string, against: string) {
@@ -86,7 +86,7 @@ export default class Director implements Arbitrator {
 	cancelled(id: string) {
 		return createExtError(new Error(`Build for '${id}' is cancelled.`), {
 			system: true,
-			hide: true
+			hide: true,
 		});
 	}
 
@@ -103,6 +103,8 @@ export default class Director implements Arbitrator {
 		if (cached) return cached;
 		for (let j = this.rules.length - 1; j >= 0; j--) {
 			const rule = this.rules[j];
+			if (!rule) continue;
+
 			const match = isName || !args ? rule.matchString(name) : rule.matchGoalID(name, args);
 			if (!match) continue;
 
@@ -131,6 +133,8 @@ export default class Director implements Arbitrator {
 				throw this.tryToBuildWithDifferentRule(goal.id);
 			}
 		}
+
+		if (!goal.rule) return undefined;
 
 		const m = goal.rule.matchGoalID(goal.id, goal.args);
 		if (!m) return undefined;
@@ -208,7 +212,7 @@ export default class Director implements Arbitrator {
 		this.updateBuildRev();
 		let deps: Set<Objective<any>> = new Set();
 		getObjectivesOfDepArgs(this, null, args, deps);
-		await PromiseAllCatch([...deps].map(dep => this.buildTarget(dep)));
+		await PromiseAllCatch([...deps].map((dep) => this.buildTarget(dep)));
 		return getResultsOfDepArgs(this, null, args);
 	}
 
@@ -315,7 +319,7 @@ export class PreBuildContextImpl implements PreBuildContext<any> {
 			let triggered = [];
 			try {
 				triggered = await PromiseAllCatch(
-					deps.map(dep => {
+					deps.map((dep) => {
 						const g = this.director.queryGoal(false, dep.id, dep.args);
 						if (!g) throw this.director.ruleNotFound(dep.id);
 						return this.director.checkTriggerRebuildByDependency(g, this.objective);
@@ -520,7 +524,7 @@ class BuildContextImpl implements ExtBuildContext<any> {
 		for (const d of deps) rd.add(d);
 		this.checkCircular(deps);
 		await this.objective.progress.halt(this.director);
-		const dependencyPromises = [...deps].map(t => this.director.buildTarget(t));
+		const dependencyPromises = [...deps].map((t) => this.director.buildTarget(t));
 		await PromiseAllCatch(dependencyPromises);
 		await this.objective.progress.unhalt(this.director);
 	}
@@ -535,7 +539,7 @@ class BuildContextImpl implements ExtBuildContext<any> {
 	private _needed(deps: Set<Objective<any>>) {
 		if (deps.size) {
 			this.objective.progress.dependencies.push(
-				[...deps].map(d => ({ id: d.goal.id, args: d.goal.args }))
+				[...deps].map((d) => ({ id: d.goal.id, args: d.goal.args }))
 			);
 		}
 	}
@@ -558,10 +562,10 @@ class BuildContextImpl implements ExtBuildContext<any> {
 type PromiseResult<T> = { status: "fulfilled"; value: T } | { status: "rejected"; reason: any };
 async function PromiseAllCatch<T>($: ReadonlyArray<Promise<T>>) {
 	const rawResults: PromiseResult<T>[] = await Promise.all(
-		$.map(prom =>
+		$.map((prom) =>
 			prom
-				.then(value => ({ status: "fulfilled" as "fulfilled", value: value }))
-				.catch(reason => ({ status: "rejected" as "rejected", reason: reason }))
+				.then((value) => ({ status: "fulfilled" as "fulfilled", value: value }))
+				.catch((reason) => ({ status: "rejected" as "rejected", reason: reason }))
 		)
 	);
 
