@@ -9,9 +9,8 @@ const argv = yargs.argv;
 const { cwd, config: rulePath } = searchConfig(argv.r, argv.f, "verdafile.js");
 
 process.chdir(cwd);
-process.once("SIGINT", () => process.exit(1)).once("SIGTERM", () => process.exit(1));
 
-main(rulePath).catch(e => {
+main(rulePath).catch((e) => {
 	const ext = getExtErrorProps(e);
 	if (!ext) {
 		console.error("");
@@ -34,9 +33,16 @@ async function main(rulePath: string) {
 
 	await session.loadJournal();
 	await session.createSelfTrackingRule(session.userSelfTrackingGoal);
+
+	const userCancel = () => {
+		session.userCancelSync();
+		process.exit(1);
+	};
+	process.once("SIGINT", userCancel).once("SIGTERM", userCancel);
+
 	try {
 		await session.start(...argv._);
 	} finally {
-		await session.saveJournal();
+		session.saveJournalSync();
 	}
 }

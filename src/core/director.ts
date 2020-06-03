@@ -89,6 +89,9 @@ export default class Director implements Arbitrator {
 			hide: true,
 		});
 	}
+	BuildCancelledByUser() {
+		return createExtError(new Error(`Build cancelled by user.`), { system: true });
+	}
 
 	getProgress(goalID: string) {
 		const existing = this.journal.get(goalID);
@@ -214,6 +217,11 @@ export default class Director implements Arbitrator {
 		getObjectivesOfDepArgs(this, null, args, deps);
 		await PromiseAllCatch([...deps].map((dep) => this.buildTarget(dep)));
 		return getResultsOfDepArgs(this, null, args);
+	}
+
+	userCancelSync() {
+		this.someTargetWrong = true;
+		return this.BuildCancelledByUser();
 	}
 
 	addRule<T, A extends any[]>(rule: Rule<T, A>) {

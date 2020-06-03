@@ -67,7 +67,7 @@ export class Session implements ISession {
 		if (!this.config || !this.userSelfTrackingSet) return;
 		const rulePath = this.config.rulePath;
 		const rulePathGoal = this.rules.fileUpdated`${rulePath}`;
-		const stg = this.ruleTypes.SelfTracking(selfTrackingID, async t => {
+		const stg = this.ruleTypes.SelfTracking(selfTrackingID, async (t) => {
 			await t.need(dependency || rulePathGoal);
 		});
 		this.selfTrackingGoal = stg`${selfTrackingID}`;
@@ -87,10 +87,17 @@ export class Session implements ISession {
 			await fs.writeFile(this.config.journal, "{}");
 		}
 	}
-	async saveJournal() {
+	saveJournalSync() {
 		if (!this.config.journal) return;
-		await fs.ensureFile(this.config.journal);
-		await fs.writeFile(this.config.journal, JSON.stringify(this.director.toJson(), null, "\t"));
+		fs.ensureFileSync(this.config.journal);
+		fs.writeFileSync(this.config.journal, JSON.stringify(this.director.toJson(), null, "\t"));
+	}
+
+	userCancelSync() {
+		const ex = this.director.userCancelSync();
+		this.reporter.systemError(ex);
+		this.reporter.end(true);
+		this.saveJournalSync();
 	}
 
 	async start(...args: OrderGoalTypeList) {
