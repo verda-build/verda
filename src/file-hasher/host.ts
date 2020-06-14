@@ -5,13 +5,14 @@ import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
 import Semaphore from "semaphore-async-await";
+import { IpcMessage } from "../ipc";
 
 const jobs = os.cpus().length;
 const semaphore = new Semaphore(jobs);
 
 function nodejsExitPromise(p: ChildProcess, returnValue: () => any, err: () => any) {
-	return new Promise<any>(function(resolve, reject) {
-		p.on("exit", function(code, signal) {
+	return new Promise<any>(function (resolve, reject) {
+		p.on("exit", function (code, signal) {
 			const e = err();
 			const r = returnValue();
 			if (signal || code || e) {
@@ -27,10 +28,10 @@ function hashFileChildProcessImpl(fileName: string): Promise<string> {
 	let returnValue: string | null = null;
 	let errorThrown: Error | null = null;
 	let proc = cp.spawn(process.execPath, [path.join(__dirname, "guest.js")], {
-		stdio: ["pipe", "pipe", "pipe", "ipc"]
+		stdio: ["pipe", "pipe", "pipe", "ipc"],
 	});
 
-	proc.on("message", function(message) {
+	proc.on("message", function (message: IpcMessage) {
 		if (!message.directive) {
 			errorThrown = new Error("IPC Error " + message);
 		}
@@ -56,7 +57,11 @@ function hashFileChildProcessImpl(fileName: string): Promise<string> {
 		}
 	});
 
-	return nodejsExitPromise(proc, () => returnValue, () => errorThrown);
+	return nodejsExitPromise(
+		proc,
+		() => returnValue,
+		() => errorThrown
+	);
 }
 
 export async function hashFile(path: string) {
@@ -76,17 +81,17 @@ export async function hashSmallFile(path: string): Promise<string> {
 		let sum = crypto.createHash("sha1");
 
 		let fileStream = fs.createReadStream(path);
-		fileStream.on("error", function(err) {
+		fileStream.on("error", function (err) {
 			return reject(err);
 		});
-		fileStream.on("data", function(chunk) {
+		fileStream.on("data", function (chunk) {
 			try {
 				sum.update(chunk);
 			} catch (ex) {
 				return reject(ex);
 			}
 		});
-		fileStream.on("end", function() {
+		fileStream.on("end", function () {
 			return resolve(sum.digest("hex"));
 		});
 	});

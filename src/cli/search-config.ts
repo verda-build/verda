@@ -1,11 +1,13 @@
 import * as fs from "fs-extra";
 import * as path from "path";
 
-export function searchConfig(
-	workDir: string,
-	explicitRuleFile: string,
-	fn: string
-): { cwd: string; config: string } {
+export type SearchConfigArgv = {
+	r?: null | undefined | string;
+	f?: null | undefined | string;
+};
+export function searchConfig(argv: SearchConfigArgv, fn: string): { cwd: string; config: string } {
+	let workDir = argv.r,
+		explicitRuleFile = argv.f;
 	if (explicitRuleFile) {
 		explicitRuleFile = require.resolve(path.resolve(explicitRuleFile));
 		if (!fs.pathExistsSync(explicitRuleFile)) {
@@ -13,7 +15,7 @@ export function searchConfig(
 		}
 		return {
 			cwd: workDir || path.dirname(explicitRuleFile),
-			config: explicitRuleFile
+			config: explicitRuleFile,
 		};
 	}
 	if (!workDir) workDir = process.cwd();
@@ -22,7 +24,7 @@ export function searchConfig(
 		if (fs.pathExistsSync(path.join(workDir, fn))) {
 			return {
 				cwd: workDir,
-				config: path.join(workDir, fn)
+				config: path.join(workDir, fn),
 			};
 		}
 		if (path.resolve(workDir, "..") === workDir) break;

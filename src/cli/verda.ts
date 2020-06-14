@@ -6,7 +6,7 @@ import { Session } from "../session";
 import { searchConfig } from "./search-config";
 
 const argv = yargs.argv;
-const { cwd, config: rulePath } = searchConfig(argv.r, argv.f, "verdafile.js");
+const { cwd, config: rulePath } = searchConfig(argv as any, "verdafile.js");
 
 process.chdir(cwd);
 

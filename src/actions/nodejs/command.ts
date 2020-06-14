@@ -1,16 +1,16 @@
 import * as cp from "child_process";
-import { ChildProcess } from "child_process";
 import * as os from "os";
 import * as path from "path";
 
 import { ProcessActionOptions } from "../command";
 import { ActionEnv } from "../interfaces";
+import { IpcMessage } from "../../ipc";
 
 const memorySize = Math.round(os.totalmem() / 1048576);
 
-function nodejsExitPromise(p: ChildProcess, returnValue: () => any, err: () => any) {
-	return new Promise<any>(function(resolve, reject) {
-		p.on("exit", function(code, signal) {
+function nodejsExitPromise(p: cp.ChildProcess, returnValue: () => any, err: () => any) {
+	return new Promise<any>(function (resolve, reject) {
+		p.on("exit", function (code, signal) {
 			const e = err();
 			const r = returnValue();
 			if (signal || code || e) {
@@ -36,7 +36,7 @@ function startNodeJSCallPromise(
 		{
 			cwd: options.cwd,
 			env: options.env,
-			stdio: ["pipe", "pipe", "pipe", "ipc"]
+			stdio: ["pipe", "pipe", "pipe", "ipc"],
 		}
 	);
 
@@ -44,7 +44,7 @@ function startNodeJSCallPromise(
 		options.reporter.actions([[module, ...args]], "jsCall");
 	}
 
-	proc.on("message", function(message) {
+	proc.on("message", function (message: IpcMessage) {
 		if (!message.directive) {
 			errorThrown = new Error("IPC Error " + message);
 		}
@@ -74,11 +74,15 @@ function startNodeJSCallPromise(
 	});
 
 	if (options.reporter) {
-		proc.stdout.on("data", data => options.reporter.redirectStdout(data));
-		proc.stderr.on("data", data => options.reporter.redirectStderr(data));
+		if (proc.stdout) proc.stdout.on("data", (data) => options.reporter.redirectStdout(data));
+		if (proc.stderr) proc.stderr.on("data", (data) => options.reporter.redirectStderr(data));
 	}
 
-	return nodejsExitPromise(proc, () => returnValue, () => errorThrown);
+	return nodejsExitPromise(
+		proc,
+		() => returnValue,
+		() => errorThrown
+	);
 }
 
 export function createKit_NodeJS(ce: ActionEnv) {
@@ -86,11 +90,11 @@ export function createKit_NodeJS(ce: ActionEnv) {
 		return startNodeJSCallPromise(module, path.resolve(ce.cd, module), args, {
 			cwd: ce.cd,
 			env: ce.env,
-			reporter: ce.reporter
+			reporter: ce.reporter,
 		});
 	}
 
 	return {
-		node: runNodeJS
+		node: runNodeJS,
 	};
 }

@@ -5,6 +5,7 @@ import { SleepPromise } from "../core/director";
 import { Reporter } from "../reporter";
 
 import { ActionEnv, DeepArray } from "./interfaces";
+import { nextTick } from "process";
 
 export function flattenArgList(args: DeepArray<any>): string[] {
 	let ans: string[] = [];
@@ -46,23 +47,24 @@ function startPipeline(
 		const p = spawn(realCommand, args, {
 			cwd: options.cwd,
 			env: options.env,
-			stdio: options.interactive ? "inherit" : "pipe"
+			stdio: options.interactive ? "inherit" : "pipe",
 		});
+
 		if (options.reporter && !options.interactive) {
-			p.stderr.on("data", data => options.reporter.redirectStderr(data));
+			p.stderr!.on("data", (data) => options.reporter.redirectStderr(data));
 			if (j < commands.length - 1) {
 				const next = processes[j + 1];
-				p.stdout.on("data", data => next.stdin.write(data));
-				p.on("close", () => next.stdin.end());
+				p.stdout!.on("data", (data) => next.stdin!.write(data));
+				p.on("close", () => next.stdin!.end());
 			} else {
-				p.stdout.on("data", data => options.reporter.redirectStdout(data));
+				p.stdout!.on("data", (data) => options.reporter.redirectStdout(data));
 			}
 		}
 		processes[j] = p;
 	}
-	return new Promise(function(resolve, reject) {
+	return new Promise(function (resolve, reject) {
 		for (let j = 0; j < processes.length; j++) {
-			processes[j].on("exit", function(code, signal) {
+			processes[j].on("exit", function (code, signal) {
 				if (signal) reject({ signal });
 				else if (code) reject({ code });
 				else if (j === processes.length - 1) resolve({ code: 0 });
@@ -108,12 +110,12 @@ export function createKit_Command(ce: ActionEnv) {
 			cwd: ce.cd,
 			env: ce.env,
 			reporter: ce.reporter,
-			interactive: true
+			interactive: true,
 		});
 	}
 
 	return {
 		run: runCommand,
-		interactive: runInteractive
+		interactive: runInteractive,
 	};
 }
