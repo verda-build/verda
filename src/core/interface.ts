@@ -9,7 +9,7 @@ export type Json = JsonMap | JsonArray | string | number | boolean | null;
 export type Dependency = { readonly id: string; readonly args: string[] };
 
 // Rule
-export type RuleMatchResult<A> = null | Dependency & { execArgs: A };
+export type RuleMatchResult<A> = null | (Dependency & { execArgs: A });
 export interface Rule<T, A extends any[]> {
 	readonly kindTag: string;
 	readonly isUser: boolean;
@@ -34,17 +34,17 @@ export enum BuildStatus {
 	STARTED = 1,
 	FINISHED = 2,
 	ERROR = 3,
-	HALT = 4
+	HALT = 4,
 }
 export enum PreBuildResult {
 	NO = 0,
 	TIME = 1,
-	YES = 2
+	YES = 2,
 }
 export enum PreBuildStatus {
 	UNKNOWN = 0,
 	CHECKING = 1,
-	DECIDED = 2
+	DECIDED = 2,
 }
 
 export interface Progress<T> {

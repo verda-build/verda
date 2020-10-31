@@ -1,10 +1,11 @@
+import { createExtError } from "../errors";
 import {
 	Arbitrator,
 	BuildStatus,
 	Dependency,
 	PreBuildResult,
 	PreBuildStatus,
-	Progress
+	Progress,
 } from "./interface";
 
 type AcceptHandler<T> = (result: T) => void;
@@ -26,9 +27,9 @@ export default class ProgressImpl<T> implements Progress<T> {
 	revision: number = 0;
 	private _lastError: Error | null = null;
 
-	private listeners: (AcceptHandler<T>)[] = [];
-	private errorListeners: (RejectHandler)[] = [];
-	private modifiedListeners: (ModifiedHandler)[] = [];
+	private listeners: AcceptHandler<T>[] = [];
+	private errorListeners: RejectHandler[] = [];
+	private modifiedListeners: ModifiedHandler[] = [];
 
 	constructor(id: string) {
 		this.id = id;
@@ -56,8 +57,8 @@ export default class ProgressImpl<T> implements Progress<T> {
 			// Do it
 			arb.start(this)
 				.then(fn)
-				.then(x => this.finish(arb, x))
-				.catch(e => this.error(arb, e));
+				.then((x) => this.finish(arb, x))
+				.catch((e) => this.error(arb, e));
 		}
 		return this.finishPromise();
 	}
@@ -109,8 +110,8 @@ export default class ProgressImpl<T> implements Progress<T> {
 		if (this.preBuildStatus === PreBuildStatus.UNKNOWN) {
 			this.preBuildStatus = PreBuildStatus.CHECKING;
 			fn()
-				.then(x => this.finishModifiedCheck(x))
-				.catch(e => this.finishModifiedCheck(PreBuildResult.YES));
+				.then((x) => this.finishModifiedCheck(x))
+				.catch((e) => this.finishModifiedCheck(PreBuildResult.YES));
 		}
 		return this.modifiedCheckFinishPromise();
 	}
@@ -141,8 +142,8 @@ export default class ProgressImpl<T> implements Progress<T> {
 				(this.status !== BuildStatus.NOT_STARTED && this.status !== BuildStatus.FINISHED) ||
 				this.volatile,
 			result: this.result,
-			dependencies: this.dependencies.map(t => [...t]),
-			revision: this.revision
+			dependencies: this.dependencies.map((t) => [...t]),
+			revision: this.revision,
 		};
 		return o;
 	}

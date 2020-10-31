@@ -269,6 +269,7 @@ export default class Director implements Arbitrator {
 		if (p.isUser) this.reporter.targetStart(p.id);
 		if (p.isUser) this.reporter.targetHalt(p.id);
 		if (this.lock && p.isUser) await this.lock.acquire();
+		if (this.someTargetWrong) throw this.cancelled(p.id);
 		if (p.isUser) this.reporter.targetUnHalt(p.id);
 		await SleepPromise(0);
 	}
@@ -276,6 +277,7 @@ export default class Director implements Arbitrator {
 		if (this.lock && p.isUser) this.lock.release();
 		if (p.isUser) {
 			if (err) {
+				this.someTargetWrong = true;
 				this.reporter.targetError(p.id, err);
 			} else {
 				this.reporter.targetEnd(p.id);
@@ -285,6 +287,7 @@ export default class Director implements Arbitrator {
 	}
 	async unhalt<T>(p: Progress<T>) {
 		if (this.lock && p.isUser) await this.lock.acquire();
+		if (this.someTargetWrong) throw this.cancelled(p.id);
 		if (p.isUser) this.reporter.targetUnHalt(p.id);
 		await SleepPromise(0);
 	}

@@ -60,11 +60,9 @@ function startNodeJSCallPromise(
 				proc.send({ directive: "over" });
 				break;
 			case "error":
-				console.error("<IPC Error>", message.reason);
 				errorThrown = new Error(message.reason);
 				break;
 			case "callError":
-				console.error("<Failure>", message.message || message.reason);
 				errorThrown = new Error(message.message || message.reason);
 				break;
 			default:
