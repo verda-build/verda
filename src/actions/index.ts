@@ -1,11 +1,12 @@
 import * as path from "path";
-
+import { QuietReporter } from "../reporter/quiet";
+import { SuppressedReporter } from "../reporter/suppressed";
 import { createKit_Command } from "./command";
 import { createKit_Echo } from "./echo";
+import { createKit_Fail } from "./fail";
 import { createKit_File } from "./file";
 import { ActionEnv, Dict } from "./interfaces";
 import { createKit_NodeJS } from "./nodejs/command";
-import { createKit_Fail } from "./fail";
 
 function defaultActions(ce: ActionEnv) {
 	return {
@@ -13,7 +14,7 @@ function defaultActions(ce: ActionEnv) {
 		...createKit_NodeJS(ce),
 		...createKit_Echo(ce),
 		...createKit_File(ce),
-		...createKit_Fail(ce)
+		...createKit_Fail(ce),
 	};
 }
 
@@ -27,7 +28,9 @@ export function defaultActionKit(ce: ActionEnv) {
 	}
 	return {
 		...defaultActions(ce),
+		silently: defaultActions({ ...ce, reporter: new SuppressedReporter(ce.reporter) }),
+		absolutelySilently: defaultActions({ ...ce, reporter: new QuietReporter() }),
 		cd: (into: string) => defaultActionKit(cd(into)),
-		withEnv: (e: Dict<string>) => defaultActionKit(withEnv(e))
+		withEnv: (e: Dict<string>) => defaultActionKit(withEnv(e)),
 	};
 }

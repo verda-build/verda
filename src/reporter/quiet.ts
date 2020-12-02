@@ -1,4 +1,4 @@
-import { Reporter } from ".";
+import { Reporter } from "./index";
 
 export class QuietReporter implements Reporter {
 	start() {}
