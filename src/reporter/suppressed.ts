@@ -7,6 +7,9 @@ export class SuppressedReporter implements Reporter {
 	end(wrong?: boolean) {
 		return this.m_reporter.end(wrong);
 	}
+	get verbosity() {
+		return this.m_reporter.verbosity;
+	}
 
 	// Target start/termination
 	targetStart(name: string) {}
@@ -30,15 +33,36 @@ export class SuppressedReporter implements Reporter {
 	}
 
 	// Action logging
-	actions(lines: any[][], style?: string) {}
+	actions(lines: any[][], style?: string) {
+		if (this.verbosity < 7) return;
+		return this.m_reporter.actions(lines, style);
+	}
 
 	// Levelled logging
-	debug(...line: any[]) {}
-	info(...line: any[]) {}
-	echo(...line: any[]) {}
-	warn(...line: any[]) {}
-	note(...line: any[]) {}
-	success(...line: any[]) {}
+	debug(...line: any[]) {
+		if (this.verbosity < 7) return;
+		return this.m_reporter.debug(...line);
+	}
+	info(...line: any[]) {
+		if (this.verbosity < 7) return;
+		return this.m_reporter.info(...line);
+	}
+	echo(...line: any[]) {
+		if (this.verbosity < 7) return;
+		return this.m_reporter.echo(...line);
+	}
+	warn(...line: any[]) {
+		if (this.verbosity < 7) return;
+		return this.m_reporter.warn(...line);
+	}
+	note(...line: any[]) {
+		if (this.verbosity < 7) return;
+		return this.m_reporter.note(...line);
+	}
+	success(...line: any[]) {
+		if (this.verbosity < 7) return;
+		return this.m_reporter.success(...line);
+	}
 	fail(...line: any[]) {
 		return this.m_reporter.fail(...line);
 	}

@@ -8,7 +8,7 @@ import {
 	ActionLogHighlighter,
 	commandStylizer,
 	defaultStylizer,
-	jsCallStyle
+	jsCallStyle,
 } from "./console-styles";
 import Spinner, { SpinnerTextSource } from "./spinner";
 import { CpuStats, MemStats } from "./stat";
@@ -119,7 +119,7 @@ class ConsoleReporterTextSource implements SpinnerTextSource {
 }
 
 export default class ConsoleReporter implements Reporter {
-	private verbosity: number;
+	public verbosity: number;
 	private spinner: Spinner;
 	private text: ConsoleReporterTextSource;
 	private columns: number;

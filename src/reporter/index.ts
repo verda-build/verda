@@ -1,6 +1,7 @@
 export interface Reporter {
 	start(): void;
 	end(wrong?: boolean): void;
+	readonly verbosity: number;
 
 	// Target start/termination
 	targetStart(name: string): void;

@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import chalk, { ChalkFunction } from "chalk";
 import * as util from "util";
 
 export interface ActionLogHighlighter {
@@ -29,7 +29,7 @@ export const commandStylizer: ActionLogHighlighter = {
 		if (/^-/.test(text)) return chalk.yellow(slicedText);
 		if (/^'/.test(text)) return chalk.green(slicedText);
 		return slicedText;
-	}
+	},
 };
 
 export const jsCallStyle: ActionLogHighlighter = {
@@ -42,11 +42,28 @@ export const jsCallStyle: ActionLogHighlighter = {
 		return JSON.stringify(term) || "";
 	},
 	stylize(term: any, lineNo: number, termNo: number, text: string, slicedText: string): string {
-		if (termNo === 0) return chalk.blue.underline(slicedText);
+		if (termNo === 0) return chalk.blueBright.underline(slicedText);
 		return slicedText;
-	}
+	},
 };
 
+export class HighlightedRun {
+	constructor(readonly style: string, readonly text: unknown) {}
+	resolve() {
+		const s = HighlightedRun.styleMap[this.style];
+		if (s) return s(String(this.text));
+		else return String(this.text);
+	}
+
+	private static styleMap: { [style: string]: ChalkFunction | undefined } = Object.create(null, {
+		directive: { value: chalk.cyanBright },
+		operator: { value: chalk.cyan },
+		command: { value: chalk.blueBright },
+		param: { value: chalk.yellow },
+		quote: { value: chalk.green },
+		numeric: { value: chalk.magentaBright },
+	});
+}
 export const defaultStylizer: ActionLogHighlighter = {
 	trail: "...",
 	styledTrail: chalk.gray("..."),
@@ -54,9 +71,17 @@ export const defaultStylizer: ActionLogHighlighter = {
 		return "";
 	},
 	escape(term: any, lineNo: number, termNo: number) {
-		return term + "";
+		if (term instanceof HighlightedRun) {
+			return String(term.text);
+		} else {
+			return String(term);
+		}
 	},
 	stylize(term: any, lineNo: number, termNo: number, text: string, slicedText: string): string {
-		return slicedText;
-	}
+		if (term instanceof HighlightedRun) {
+			return term.resolve();
+		} else {
+			return slicedText;
+		}
+	},
 };

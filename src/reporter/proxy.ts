@@ -9,6 +9,9 @@ export class ProxyReporter implements Reporter {
 	end(wrong?: boolean) {
 		this.real().end(wrong);
 	}
+	get verbosity() {
+		return this.real().verbosity;
+	}
 
 	// Target start/termination
 	targetStart(name: string) {

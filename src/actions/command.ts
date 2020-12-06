@@ -5,7 +5,6 @@ import { SleepPromise } from "../core/director";
 import { Reporter } from "../reporter";
 
 import { ActionEnv, DeepArray } from "./interfaces";
-import { nextTick } from "process";
 
 export function flattenArgList(args: DeepArray<any>): string[] {
 	let ans: string[] = [];

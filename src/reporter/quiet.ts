@@ -3,6 +3,7 @@ import { Reporter } from "./index";
 export class QuietReporter implements Reporter {
 	start() {}
 	end(wrong?: boolean) {}
+	readonly verbosity = 0;
 
 	// Target start/termination
 	targetStart(name: string) {}
