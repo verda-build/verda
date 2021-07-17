@@ -41,7 +41,7 @@ async function main(rulePath: string) {
 	process.once("SIGINT", userCancel).once("SIGTERM", userCancel);
 
 	try {
-		await session.start(...argv._);
+		await session.start(...(argv as any)._);
 	} finally {
 		session.saveJournalSync();
 	}

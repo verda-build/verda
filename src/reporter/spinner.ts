@@ -86,7 +86,8 @@ export default class Spinner {
 	private id: null | NodeJS.Timer = null;
 
 	private stream = process.stderr;
-	private outputIsTty = process.stdout.isTTY && process.stderr.isTTY;
+	private outputIsTty =
+		process.stdout.isTTY && process.stderr.isTTY && !(process.env.TERM === "dumb");
 
 	clear() {
 		if (!this.enabled || !this.outputIsTty) return;

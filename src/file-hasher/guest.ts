@@ -11,23 +11,23 @@ function hashFile(path: string): Promise<string> {
 		let sum = crypto.createHash("sha1");
 
 		let fileStream = fs.createReadStream(path);
-		fileStream.on("error", function(err) {
+		fileStream.on("error", function (err) {
 			return reject(err);
 		});
-		fileStream.on("data", function(chunk) {
+		fileStream.on("data", function (chunk) {
 			try {
 				sum.update(chunk);
 			} catch (ex) {
 				return reject(ex);
 			}
 		});
-		fileStream.on("end", function() {
+		fileStream.on("end", function () {
 			return resolve(sum.digest("hex"));
 		});
 	});
 }
 
-process.on("message", function(message) {
+process.on("message", function (message: any) {
 	if (!message.directive) {
 		process.send!({ directive: "error", reason: "Message directive not found." });
 		process.exit(1);
@@ -42,8 +42,8 @@ process.on("message", function(message) {
 			}
 
 			hashFile(message.path)
-				.then(result => process.send!({ directive: "return", result }))
-				.catch(e => {
+				.then((result) => process.send!({ directive: "return", result }))
+				.catch((e) => {
 					process.send!({ directive: "callError", reason: e, message: util.inspect(e) });
 					process.exit(1);
 				});
