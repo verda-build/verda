@@ -42,6 +42,19 @@ class FileStatInfoImpl extends ParsedPathImpl implements FileStatInfo {
 			this.hash = hash;
 		}
 	}
+	notChanged(that: null | undefined | FileStatInfo) {
+		if (!that) return false;
+		if (!this.present) return false;
+		if (!that.present) return false;
+		if (this.hash === "?" || that.hash === "?") return false;
+		return this.hash === that.hash;
+	}
+	optionalFileNotChanged(that: null | undefined | FileStatInfo) {
+		if (!that) return false;
+		if (this.present !== that.present) return false;
+		if (this.hash === "?" || that.hash === "?") return false;
+		return this.hash === that.hash;
+	}
 }
 
 export async function pathParseAndUpdate(s: string) {
@@ -124,18 +137,14 @@ class FileRule extends RuleBase<FileExecArgs> implements Rule<FileStatInfo, File
 		if (t.isVolatile) return PreBuildResult.YES;
 		if (await t.dependencyModified()) return PreBuildResult.YES;
 		const u = await pathParseAndUpdate(path.full);
-		return !u ||
-			!u.present ||
-			!t.lastResult ||
-			!t.lastResult.present ||
-			t.lastResult.hash !== u.hash
-			? PreBuildResult.YES
-			: PreBuildResult.TIME;
+		return !u || !u.notChanged(t.lastResult) ? PreBuildResult.YES : PreBuildResult.TIME;
 	}
 }
 
-export class FileUpdatedRule extends RuleBase<FileExecArgs>
-	implements Rule<FileStatInfo, FileExecArgs> {
+export class FileUpdatedRule
+	extends RuleBase<FileExecArgs>
+	implements Rule<FileStatInfo, FileExecArgs>
+{
 	readonly kindTag = "Builtin::FileUpdateRule";
 
 	constructor(matcher: GoalMatcher<FileExecArgs>) {
@@ -144,16 +153,7 @@ export class FileUpdatedRule extends RuleBase<FileExecArgs>
 
 	async build(target: ExtBuildContext<FileStatInfo>, $1: ParsedPathImpl) {
 		const u = await pathParseAndUpdate($1.full);
-		if (!u) {
-			target.is.modified();
-			return u;
-		}
-		if (
-			!u.present ||
-			!target.lastResult ||
-			!target.lastResult.present ||
-			target.lastResult.hash !== u.hash
-		) {
+		if (!u.notChanged(target.lastResult)) {
 			target.is.modified();
 		} else {
 			target.is.not.modified();
@@ -167,8 +167,10 @@ export class FileUpdatedRule extends RuleBase<FileExecArgs>
 	}
 }
 
-export class OptionalFileUpdatedRule extends RuleBase<FileExecArgs>
-	implements Rule<FileStatInfo, FileExecArgs> {
+export class OptionalFileUpdatedRule
+	extends RuleBase<FileExecArgs>
+	implements Rule<FileStatInfo, FileExecArgs>
+{
 	readonly kindTag = "Builtin::OptionalFileUpdateRule";
 
 	constructor(matcher: GoalMatcher<FileExecArgs>) {
@@ -177,15 +179,7 @@ export class OptionalFileUpdatedRule extends RuleBase<FileExecArgs>
 
 	async build(target: ExtBuildContext<FileStatInfo>, $1: ParsedPathImpl) {
 		const u = await pathParseAndUpdate($1.full);
-		if (!u) {
-			target.is.modified();
-			return u;
-		}
-		if (
-			!target.lastResult ||
-			u.present !== target.lastResult.present ||
-			target.lastResult.hash !== u.hash
-		) {
+		if (!u.optionalFileNotChanged(target.lastResult)) {
 			target.is.modified();
 		} else {
 			target.is.not.modified();
@@ -198,8 +192,10 @@ export class OptionalFileUpdatedRule extends RuleBase<FileExecArgs>
 	}
 }
 
-export class SourceFileUpdatedRule extends RuleBase<FileExecArgs>
-	implements Rule<FileStatInfo, FileExecArgs> {
+export class SourceFileUpdatedRule
+	extends RuleBase<FileExecArgs>
+	implements Rule<FileStatInfo, FileExecArgs>
+{
 	readonly kindTag = "Builtin::SourceFileUpdatedRule";
 
 	constructor(matcher: GoalMatcher<FileExecArgs>) {
@@ -211,12 +207,7 @@ export class SourceFileUpdatedRule extends RuleBase<FileExecArgs>
 		if (!u.present) {
 			throw new Error(`File ${$1.full} is required but missing.`);
 		}
-		if (
-			!u.present ||
-			!target.lastResult ||
-			!target.lastResult.present ||
-			target.lastResult.hash !== u.hash
-		) {
+		if (!u.notChanged(target.lastResult)) {
 			target.is.modified();
 		} else {
 			target.is.not.modified();
@@ -230,8 +221,10 @@ export class SourceFileUpdatedRule extends RuleBase<FileExecArgs>
 	}
 }
 
-export class FileExistsRule extends RuleBase<FileExecArgs>
-	implements Rule<FileStatInfo, FileExecArgs> {
+export class FileExistsRule
+	extends RuleBase<FileExecArgs>
+	implements Rule<FileStatInfo, FileExecArgs>
+{
 	readonly kindTag = "Builtin::FileExistsRule";
 
 	constructor(matcher: GoalMatcher<FileExecArgs>) {
@@ -243,7 +236,7 @@ export class FileExistsRule extends RuleBase<FileExecArgs>
 	}
 	async build(target: ExtBuildContext<FileStatInfo>, $1: ParsedPathImpl) {
 		const u = await pathParseAndUpdate($1.full);
-		if (!u || !u.present) throw new Error("Dependent file not found: " + $1.full);
+		if (!u.present) throw new Error("Dependent file not found: " + $1.full);
 		target.is.not.modified();
 		return u;
 	}
@@ -253,8 +246,10 @@ export class FileExistsRule extends RuleBase<FileExecArgs>
 			: PreBuildResult.NO;
 	}
 }
-export class DirExistsRule extends RuleBase<FileExecArgs>
-	implements Rule<FileStatInfo, FileExecArgs> {
+export class DirExistsRule
+	extends RuleBase<FileExecArgs>
+	implements Rule<FileStatInfo, FileExecArgs>
+{
 	readonly kindTag = "Builtin::DirExistsRule";
 
 	constructor(matcher: GoalMatcher<FileExecArgs>) {
@@ -265,9 +260,13 @@ export class DirExistsRule extends RuleBase<FileExecArgs>
 		return null;
 	}
 	async build(target: ExtBuildContext<FileStatInfo>, $1: ParsedPathImpl) {
-		if (!(await fs.pathExists($1.full))) await fs.ensureDir($1.full);
+		if (!(await fs.pathExists($1.full))) {
+			await fs.ensureDir($1.full);
+			target.is.modified();
+		} else {
+			target.is.not.modified();
+		}
 		const u = await pathParseAndUpdate($1.full);
-		target.is.not.modified();
 		return u;
 	}
 	async preBuild(target: PreBuildContext<FileStatInfo>, $1: ParsedPathImpl) {
