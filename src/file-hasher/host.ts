@@ -1,21 +1,20 @@
-import * as cp from "child_process";
-import { ChildProcess } from "child_process";
 import * as crypto from "crypto";
 import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
 import Semaphore from "semaphore-async-await";
+import { Worker } from "worker_threads";
 import { IpcMessage } from "../ipc";
 
 const jobs = os.cpus().length;
 const semaphore = new Semaphore(jobs);
 
-function nodejsExitPromise(p: ChildProcess, returnValue: () => any, err: () => any) {
+function nodejsExitPromise(p: Worker, returnValue: () => any, err: () => any) {
 	return new Promise<any>(function (resolve, reject) {
-		p.on("exit", function (code, signal) {
+		p.on("exit", function () {
 			const e = err();
 			const r = returnValue();
-			if (signal || code || e) {
+			if (e) {
 				return reject(e);
 			} else {
 				return resolve(r);
@@ -27,38 +26,31 @@ function nodejsExitPromise(p: ChildProcess, returnValue: () => any, err: () => a
 function hashFileChildProcessImpl(fileName: string): Promise<string> {
 	let returnValue: string | null = null;
 	let errorThrown: Error | null = null;
-	let proc = cp.spawn(process.execPath, [path.join(__dirname, "guest.js")], {
-		stdio: ["pipe", "pipe", "pipe", "ipc"],
-	});
 
-	proc.on("message", function (message: IpcMessage) {
+	const thread = new Worker(path.join(__dirname, "thread.js"), { stdout: true });
+	thread.on("message", function (message: IpcMessage) {
 		if (!message.directive) {
 			errorThrown = new Error("IPC Error " + message);
 		}
 		switch (message.directive) {
 			case "ready":
-				proc.send({ directive: "compute", path: fileName });
+				thread.postMessage({ directive: "compute", path: fileName });
 				break;
 			case "return":
 				returnValue = message.result;
-				proc.send({ directive: "over" });
-				break;
-			case "error":
-				console.error("<IPC Error>", message.reason);
-				errorThrown = new Error(message.reason);
-				break;
-			case "callError":
-				console.error("<Failure>", message.message || message.reason);
-				errorThrown = new Error(message.message || message.reason);
+				thread.unref();
 				break;
 			default:
 				errorThrown = new Error("<IPC Error> " + message);
 				break;
 		}
 	});
+	thread.on("error", function (e) {
+		errorThrown = e;
+	});
 
 	return nodejsExitPromise(
-		proc,
+		thread,
 		() => returnValue,
 		() => errorThrown
 	);

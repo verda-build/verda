@@ -9,7 +9,7 @@ export interface Reporter {
 	targetEnd(name: string): void;
 	targetHalt(name: string): void;
 	targetUnHalt(name: string): void;
-	systemError(e: Error): void;
+	systemError(e: unknown): void;
 	targetError(name: string, e: Error): void;
 
 	// STDOUT/STDERR redirection

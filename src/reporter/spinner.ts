@@ -1,12 +1,13 @@
 import chalk from "chalk";
 import * as cliCursor from "cli-cursor";
 import * as readline from "readline";
-import stripAnsi from "strip-ansi";
 
 // No idea how to detect whether the console font supports all the characters
 const isLegacyConsole =
 	process.platform === "win32" &&
 	!(process.env.TERM_PROGRAM === "vscode" || !!process.env.WT_SESSION);
+
+const ansiRegex = /(\u009B|\u001B\[)[0-?]*[ -\/]*[@-~]/g;
 
 const spinnerInterval = 100;
 const spinnerFrames = [
@@ -141,6 +142,6 @@ export default class Spinner {
 	}
 
 	private textSize(t: string) {
-		return stripAnsi(t).length;
+		return t.replace(ansiRegex, "").length;
 	}
 }
