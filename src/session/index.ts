@@ -7,6 +7,7 @@ import { Goal, OrderGoalTypeList } from "../core/interface";
 import { Reporter } from "../reporter";
 import ConsoleReporter from "../reporter/console";
 import { QuietReporter } from "../reporter/quiet";
+import { RedirectReporter } from "../reporter/redirect";
 import { bindDefaultRulesAndFunctions, bindDefaultRuleTypes } from "../rule-types";
 
 import { ISession } from "./interface";
@@ -51,13 +52,16 @@ export class Session implements ISession {
 	}
 
 	// Internal methods
-
 	bindConfig(options: IExternalOptions) {
 		this.config.bind(options);
 		this.director.setCapacity(this.config.jCmd);
 		// Enable logging when under TTY
 		if (process.stderr.isTTY && process.stdout.isTTY) {
 			this.reporter = new ConsoleReporter(this.config.verbosity);
+			this.director.reporter = this.reporter;
+			this.config.reporter = this.reporter;
+		} else {
+			this.reporter = new RedirectReporter(this.config.verbosity);
 			this.director.reporter = this.reporter;
 			this.config.reporter = this.reporter;
 		}

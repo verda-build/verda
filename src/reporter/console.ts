@@ -27,8 +27,7 @@ class ConsoleReporterTextSource implements SpinnerTextSource {
 	private dProg = new DigitHistory(2);
 	private dFin = new DigitHistory(0);
 	private dExec = new DigitHistory(0);
-	private showProgress =
-		process.stderr.isTTY && process.stderr.columns && process.stderr.columns >= 120;
+	private showProgress = process.stderr.columns && process.stderr.columns >= 120;
 
 	private chromaPad(
 		value: number,
