@@ -11,24 +11,23 @@ function hashFile(path: string): Promise<string> {
 		let sum = crypto.createHash("sha1");
 
 		let fileStream = fs.createReadStream(path);
-		fileStream.on("error", function (err) {
+		fileStream.on("error", (err) => {
 			return reject(err);
 		});
-		fileStream.on("data", function (chunk) {
+		fileStream.on("data", (chunk) => {
 			try {
 				sum.update(chunk);
 			} catch (ex) {
 				return reject(ex);
 			}
 		});
-		fileStream.on("end", function () {
+		fileStream.on("end", () => {
 			return resolve(sum.digest("hex"));
 		});
 	});
 }
 
-parentPort.on("message", function (message: any) {
-	console.log("thread recieved", message);
+parentPort.on("message", (message: any) => {
 	switch (message.directive) {
 		case "compute":
 			if (!message.path) {
@@ -37,7 +36,6 @@ parentPort.on("message", function (message: any) {
 
 			hashFile(message.path)
 				.then((result) => {
-					console.log("hash complete:", result);
 					parentPort!.postMessage({ directive: "return", result });
 					parentPort!.unref();
 				})

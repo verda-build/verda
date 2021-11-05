@@ -9,62 +9,59 @@ import { IpcMessage } from "../ipc";
 const jobs = os.cpus().length;
 const semaphore = new Semaphore(jobs);
 
-function nodejsExitPromise(p: Worker, returnValue: () => any, err: () => any) {
-	return new Promise<any>(function (resolve, reject) {
-		p.on("exit", function () {
-			const e = err();
-			const r = returnValue();
-			if (e) {
-				return reject(e);
-			} else {
-				return resolve(r);
-			}
-		});
-	});
+class ThreadExit<T> {
+	public constructor(
+		private readonly thread: Worker,
+		private readonly fnResolve: (x: T) => void,
+		private readonly fnReject: (x: unknown) => void
+	) {}
+	private exited = false;
+	public resolve(x: T) {
+		if (!this.exited) {
+			this.thread.unref();
+			this.exited = true;
+			setImmediate(() => this.fnResolve(x));
+		}
+	}
+	public reject(x: unknown) {
+		if (!this.exited) {
+			this.thread.unref();
+			this.exited = true;
+			setImmediate(() => this.fnReject(x));
+		}
+	}
 }
 
 function hashFileChildProcessImpl(fileName: string): Promise<string> {
-	let returnValue: string | null = null;
-	let errorThrown: Error | null = null;
-
-	const thread = new Worker(path.join(__dirname, "thread.js"), { stdout: true });
-	thread.on("message", function (message: IpcMessage) {
-		if (!message.directive) {
-			errorThrown = new Error("IPC Error " + message);
-		}
-		switch (message.directive) {
-			case "ready":
-				thread.postMessage({ directive: "compute", path: fileName });
-				break;
-			case "return":
-				returnValue = message.result;
-				thread.unref();
-				break;
-			default:
-				errorThrown = new Error("<IPC Error> " + message);
-				break;
-		}
+	return new Promise<string>((resolve, reject) => {
+		const thread = new Worker(path.join(__dirname, "thread.js"), { stdout: true });
+		const exit = new ThreadExit<string>(thread, resolve, reject);
+		thread.on("message", (message: IpcMessage) => {
+			if (!message.directive) {
+				exit.reject(new Error("IPC Error: " + message));
+				return;
+			}
+			switch (message.directive) {
+				case "ready":
+					thread.postMessage({ directive: "compute", path: fileName });
+					return;
+				case "return":
+					exit.resolve(message.result);
+					return;
+				default:
+					exit.reject(new Error("IPC Error: " + message));
+					return;
+			}
+		});
+		thread.on("error", (e) => exit.reject(e));
 	});
-	thread.on("error", function (e) {
-		errorThrown = e;
-	});
-
-	return nodejsExitPromise(
-		thread,
-		() => returnValue,
-		() => errorThrown
-	);
 }
-
 export async function hashFile(path: string) {
+	await semaphore.acquire();
 	try {
-		await semaphore.acquire();
-		const h = await hashFileChildProcessImpl(path);
+		return await hashFileChildProcessImpl(path);
+	} finally {
 		semaphore.release();
-		return h;
-	} catch (e) {
-		semaphore.release();
-		throw e;
 	}
 }
 
