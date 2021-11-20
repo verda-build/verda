@@ -65,7 +65,7 @@ export async function pathParseAndUpdate(s: string) {
 		const updated = stats.mtime;
 		const hash = !stats.isFile()
 			? "?"
-			: stats.size < 0x100000
+			: stats.size < 0x1000000
 			? await hashSmallFile(s)
 			: await hashFile(s);
 		return new FileStatInfoImpl(s, updated, hash);

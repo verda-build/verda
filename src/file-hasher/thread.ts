@@ -31,6 +31,7 @@ parentPort.on("message", (message: any) => {
 	switch (message.directive) {
 		case "compute":
 			if (!message.path) {
+				parentPort!.unref();
 				throw new Error("Path not found.");
 			}
 
@@ -40,13 +41,14 @@ parentPort.on("message", (message: any) => {
 					parentPort!.unref();
 				})
 				.catch((e) => {
+					parentPort!.unref();
 					throw e;
 				});
 
 			break;
 		default:
+			parentPort!.unref();
 			throw new Error("Message directive not recognized.");
-			break;
 	}
 });
 

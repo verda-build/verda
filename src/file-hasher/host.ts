@@ -9,36 +9,18 @@ import { IpcMessage } from "../ipc";
 const jobs = os.cpus().length;
 const semaphore = new Semaphore(jobs);
 
-class ThreadExit<T> {
+class ThreadFileHasher<T> {
+	private thread: null | Worker;
 	public constructor(
-		private readonly thread: Worker,
+		fileName: string,
+		thread: Worker,
 		private readonly fnResolve: (x: T) => void,
 		private readonly fnReject: (x: unknown) => void
-	) {}
-	private exited = false;
-	public resolve(x: T) {
-		if (!this.exited) {
-			this.thread.unref();
-			this.exited = true;
-			setImmediate(() => this.fnResolve(x));
-		}
-	}
-	public reject(x: unknown) {
-		if (!this.exited) {
-			this.thread.unref();
-			this.exited = true;
-			setImmediate(() => this.fnReject(x));
-		}
-	}
-}
-
-function hashFileChildProcessImpl(fileName: string): Promise<string> {
-	return new Promise<string>((resolve, reject) => {
-		const thread = new Worker(path.join(__dirname, "thread.js"), { stdout: true });
-		const exit = new ThreadExit<string>(thread, resolve, reject);
+	) {
+		this.thread = thread;
 		thread.on("message", (message: IpcMessage) => {
 			if (!message.directive) {
-				exit.reject(new Error("IPC Error: " + message));
+				this.reject(new Error("IPC Error: " + message));
 				return;
 			}
 			switch (message.directive) {
@@ -46,14 +28,40 @@ function hashFileChildProcessImpl(fileName: string): Promise<string> {
 					thread.postMessage({ directive: "compute", path: fileName });
 					return;
 				case "return":
-					exit.resolve(message.result);
+					this.resolve(message.result);
 					return;
 				default:
-					exit.reject(new Error("IPC Error: " + message));
+					this.reject(new Error("IPC Error: " + message));
 					return;
 			}
 		});
-		thread.on("error", (e) => exit.reject(e));
+		thread.on("error", (e) => this.reject(e));
+	}
+
+	private resolve(x: T) {
+		if (this.thread) {
+			this.thread.unref();
+			this.thread = null;
+			setImmediate(() => this.fnResolve(x));
+		}
+	}
+	private reject(x: unknown) {
+		if (this.thread) {
+			this.thread.unref();
+			this.thread = null;
+			setImmediate(() => this.fnReject(x));
+		}
+	}
+}
+
+function hashFileChildProcessImpl(fileName: string): Promise<string> {
+	return new Promise<string>((resolve, reject) => {
+		new ThreadFileHasher<string>(
+			fileName,
+			new Worker(path.join(__dirname, "thread.js"), { stdout: true }),
+			resolve,
+			reject
+		);
 	});
 }
 export async function hashFile(path: string) {
