@@ -10,13 +10,15 @@ process.on("message", function (message: any) {
 	}
 	switch (message.directive) {
 		case "load":
-			try {
-				state.fn = require(message.path);
-			} catch (e) {
-				process.send!({ directive: "callError", reason: e, message: util.inspect(e) });
-				process.exit(1);
-			}
-			process.send!({ directive: "loaded" });
+			import(message.path)
+				.then((module) => {
+					state.fn = findBuildFn(module);
+					process.send!({ directive: "loaded" });
+				})
+				.catch((e) => {
+					process.send!({ directive: "callError", reason: e, message: util.inspect(e) });
+					process.exit(1);
+				});
 			break;
 		case "call":
 			if (!state.fn) {
@@ -47,5 +49,11 @@ process.on("message", function (message: any) {
 			break;
 	}
 });
+
+function findBuildFn(m: any) {
+	if (m.build && m.build instanceof Function) return m.build;
+	if (m.default && m.default instanceof Function) return m.default;
+	if (m instanceof Function) return m;
+}
 
 setTimeout(() => process.send!({ directive: "ready" }), 0);

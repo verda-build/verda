@@ -5,10 +5,14 @@ export type SearchConfigArgv = {
 	r?: null | undefined | string;
 	f?: null | undefined | string;
 };
-export function searchConfig(argv: SearchConfigArgv, fn: string): { cwd: string; config: string } {
+export async function searchConfig(
+	argv: SearchConfigArgv,
+	fn: string
+): Promise<{ cwd: string; config: string }> {
 	let workDir = argv.r,
 		explicitRuleFile = argv.f;
 	if (explicitRuleFile) {
+		// TODO: refactor this when we move the target to ESM.
 		explicitRuleFile = require.resolve(path.resolve(explicitRuleFile));
 		if (!fs.pathExistsSync(explicitRuleFile)) {
 			throw new Error(`Rule file ${explicitRuleFile} does not exist.`);

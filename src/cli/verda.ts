@@ -6,11 +6,8 @@ import { Session } from "../session";
 import { searchConfig } from "./search-config";
 
 const argv = yargs.argv;
-const { cwd, config: rulePath } = searchConfig(argv as any, "verdafile.js");
 
-process.chdir(cwd);
-
-main(rulePath).catch((e) => {
+main().catch((e) => {
 	const ext = getExtErrorProps(e);
 	if (!ext) {
 		console.error("");
@@ -20,7 +17,10 @@ main(rulePath).catch((e) => {
 });
 
 // The main building process
-async function main(rulePath: string) {
+async function main() {
+	const { cwd, config: rulePath } = await searchConfig(argv as any, "verdafile.js");
+	process.chdir(cwd);
+
 	const _sessionModule = await import(rulePath);
 	const _session = _sessionModule.default || _sessionModule;
 

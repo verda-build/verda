@@ -20,9 +20,10 @@
 		"node_modules":true
 	},
 	"cSpell.words": [
-		"Verda",
 		"hasher",
 		"posixify",
-		"unhalt"
+		"unhalt",
+		"Verda",
+		"verdafile"
 	]
 }
