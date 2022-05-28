@@ -1,4 +1,5 @@
 import * as fs from "fs-extra";
+import Semaphore from "semaphore-async-await";
 
 import { defaultActionKit } from "../actions";
 import { IExternalOptions, VerdaConfig } from "../config";
@@ -10,7 +11,7 @@ import { QuietReporter } from "../reporter/quiet";
 import { RedirectReporter } from "../reporter/redirect";
 import { bindDefaultRulesAndFunctions, bindDefaultRuleTypes } from "../rule-types";
 
-import { ISession } from "./interface";
+import { ISession, ISessionLocks } from "./interface";
 
 const selfTrackingID = "Meta::Self-Tracking";
 
@@ -18,14 +19,16 @@ export class Session implements ISession {
 	private reporter: Reporter = new QuietReporter();
 	private readonly config: VerdaConfig = new VerdaConfig({});
 	private director: Director;
-	ruleTypes: ReturnType<typeof bindDefaultRuleTypes>;
-	rules: ReturnType<typeof bindDefaultRulesAndFunctions>["rules"];
-	predefinedFuncs: ReturnType<typeof bindDefaultRulesAndFunctions>["predefinedFuncs"];
-	actions: ReturnType<typeof defaultActionKit>;
+
+	readonly ruleTypes: ReturnType<typeof bindDefaultRuleTypes>;
+	readonly rules: ReturnType<typeof bindDefaultRulesAndFunctions>["rules"];
+	readonly predefinedFuncs: ReturnType<typeof bindDefaultRulesAndFunctions>["predefinedFuncs"];
+	readonly actions: ReturnType<typeof defaultActionKit>;
+
+	readonly locks: SessionLocks;
 
 	userSelfTrackingSet: boolean = false;
 	userSelfTrackingGoal: null | Goal<void, any> = null;
-
 	selfTrackingGoal: null | Goal<void, any> = null;
 
 	constructor() {
@@ -37,6 +40,8 @@ export class Session implements ISession {
 		this.rules = r.rules;
 		this.predefinedFuncs = r.predefinedFuncs;
 		this.actions = defaultActionKit(this.config.createActionEnv());
+
+		this.locks = new SessionLocks();
 	}
 
 	setSelfTracking(dependency?: null | Goal<void, any>) {
@@ -125,5 +130,17 @@ export class Session implements ISession {
 			throw e;
 		}
 		this.reporter.end(false);
+	}
+}
+
+class SessionLocks implements ISessionLocks {
+	private m: Map<string, Semaphore> = new Map();
+
+	alloc(key: string, capacity?: number): Semaphore {
+		let lock = this.m.get(key);
+		if (lock) return lock;
+		lock = new Semaphore(capacity || 1);
+		this.m.set(key, lock);
+		return lock;
 	}
 }
