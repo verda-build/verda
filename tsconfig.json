@@ -3,7 +3,7 @@
 		"target": "es2018",
 		"strict": true,
 		"module": "commonjs",
-		"moduleResolution": "node",
+		"moduleResolution": "NodeNext",
 		"allowSyntheticDefaultImports": true,
 		"jsx": "preserve",
 		"importHelpers": true,

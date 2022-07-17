@@ -7,7 +7,7 @@ export type SearchConfigArgv = {
 };
 export async function searchConfig(
 	argv: SearchConfigArgv,
-	fn: string
+	fileNames: string[]
 ): Promise<{ cwd: string; config: string }> {
 	let workDir = argv.r,
 		explicitRuleFile = argv.f;
@@ -25,14 +25,16 @@ export async function searchConfig(
 	if (!workDir) workDir = process.cwd();
 	workDir = path.resolve(workDir);
 	do {
-		if (fs.pathExistsSync(path.join(workDir, fn))) {
-			return {
-				cwd: workDir,
-				config: path.join(workDir, fn),
-			};
+		for (const fn of fileNames) {
+			if (fs.pathExistsSync(path.join(workDir, fn))) {
+				return {
+					cwd: workDir,
+					config: path.join(workDir, fn),
+				};
+			}
 		}
 		if (path.resolve(workDir, "..") === workDir) break;
 		workDir = path.resolve(workDir, "..");
 	} while (true);
-	throw new Error(`Rule file ${fn} does not exist.`);
+	throw new Error(`Rule file ${fileNames} does not exist.`);
 }

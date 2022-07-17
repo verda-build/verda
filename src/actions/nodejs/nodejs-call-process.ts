@@ -1,4 +1,5 @@
 import * as util from "util";
+import * as url from "url";
 let state: { fn: Function | null; ret: any } = { fn: null, ret: null };
 if (!process.send) {
 	throw new Error("process.send! not defined");
@@ -10,7 +11,7 @@ process.on("message", function (message: any) {
 	}
 	switch (message.directive) {
 		case "load":
-			import(message.path)
+			import(url.pathToFileURL(message.path).toString())
 				.then((module) => {
 					state.fn = findBuildFn(module);
 					process.send!({ directive: "loaded" });

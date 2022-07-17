@@ -2,6 +2,7 @@ import * as yargs from "yargs";
 
 import { getExtErrorProps } from "../errors";
 import { Session } from "../session";
+import * as url from "url";
 
 import { searchConfig } from "./search-config";
 
@@ -18,11 +19,15 @@ main().catch((e) => {
 
 // The main building process
 async function main() {
-	const { cwd, config: rulePath } = await searchConfig(argv as any, "verdafile.js");
+	const { cwd, config: rulePath } = await searchConfig(argv as any, [
+		"verdafile.js",
+		"verdafile.cjs",
+		"verdafile.mjs",
+	]);
 	process.chdir(cwd);
 
-	const _sessionModule = await import(rulePath);
-	const _session = _sessionModule.default || _sessionModule;
+	const _sessionModule = await import(url.pathToFileURL(rulePath).toString());
+	const _session = _sessionModule.build || _sessionModule.default || _sessionModule;
 
 	if (!_session.loadJournal || !_session.start) {
 		throw new Error(`Configuration ${rulePath} is not default-exporting a Verda configuration`);
