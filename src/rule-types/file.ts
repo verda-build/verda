@@ -5,6 +5,7 @@ import { VerdaConfig } from "../config";
 import Director from "../core/director";
 import {
 	BuildContext,
+	Dependency,
 	ExportBuildRecipe,
 	ExtBuildContext,
 	GoalFunction,
@@ -14,7 +15,7 @@ import {
 	Rule,
 } from "../core/interface";
 import { hashFile, hashSmallFile } from "../file-hasher/host";
-import { DirContents } from "../match/interface";
+import { DirContents, ParsedPath } from "../match/interface";
 import ParsedPathImpl from "../match/parse-path";
 import posixifyPath from "../match/posixify-path";
 
@@ -277,13 +278,22 @@ export class DirExistsRule
 }
 
 export function File(cfg: VerdaConfig, dir: Director) {
+	const PREFIX = "Builtin::File::";
 	const _file = SinglePlural_F<void, FileStatInfo>(
-		"Builtin::File::",
+		PREFIX,
 		dir,
 		cfg,
 		(matcher, FRecipe) => new FileRule(matcher, FRecipe)
 	);
-	return { file: Object.assign(_file.exact, { glob: _file.glob, make: _file.make }) };
+	return {
+		file: Object.assign(_file.exact, {
+			glob: _file.glob,
+			make: _file.make,
+			getPathOf(goal: Dependency): ParsedPath {
+				return new ParsedPathImpl(goal.id.slice(PREFIX.length));
+			},
+		}),
+	};
 }
 
 function FileUpdated(cfg: VerdaConfig) {
