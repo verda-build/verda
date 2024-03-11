@@ -1,12 +1,10 @@
-import * as yargs from "yargs";
-
+import * as url from "url";
 import { getExtErrorProps } from "../errors";
 import { Session } from "../session";
-import * as url from "url";
 
 import { searchConfig } from "./search-config";
 
-const argv = yargs.argv;
+import { args } from "./options";
 
 main().catch((e) => {
 	const ext = getExtErrorProps(e);
@@ -19,7 +17,7 @@ main().catch((e) => {
 
 // The main building process
 async function main() {
-	const { cwd, config: rulePath } = await searchConfig(argv as any, [
+	const { cwd, rulePath } = await searchConfig(args, [
 		"verdafile.js",
 		"verdafile.cjs",
 		"verdafile.mjs",
@@ -34,7 +32,7 @@ async function main() {
 	}
 
 	const session = _session as Session;
-	session.bindConfig({ rulePath, cwd, ...argv });
+	session.bindConfig({ ...args, rulePath, cwd });
 
 	await session.loadJournal();
 	await session.createSelfTrackingRule(session.userSelfTrackingGoal);
@@ -46,7 +44,7 @@ async function main() {
 	process.once("SIGINT", userCancel).once("SIGTERM", userCancel);
 
 	try {
-		await session.start(...(argv as any)._);
+		await session.start(...args.targets);
 	} finally {
 		session.saveJournalSync();
 	}

@@ -7,8 +7,8 @@ import { ProxyReporter } from "../reporter/proxy";
 import { QuietReporter } from "../reporter/quiet";
 
 export interface IExternalOptions {
-	rulePath?: string;
-	cwd?: string;
+	rulePath?: null | undefined | string;
+	cwd?: null | undefined | string;
 	jCmd?: number;
 	verbosity?: number;
 }
@@ -17,6 +17,7 @@ export class VerdaConfig {
 	rulePath: string = "";
 	cwd: string = process.cwd();
 	env: Dict<string | undefined> = process.env;
+	param: Dict<string> = {};
 	journal: string = "";
 	objectives: string[] = [];
 	jCmd: number = 0;
@@ -29,7 +30,7 @@ export class VerdaConfig {
 			cwd: this.cwd,
 			env: { ...this.env },
 			rulePath: this.rulePath,
-			reporter: new ProxyReporter(() => this.reporter)
+			reporter: new ProxyReporter(() => this.reporter),
 		};
 	}
 

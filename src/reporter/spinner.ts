@@ -91,7 +91,7 @@ export default class Spinner {
 	private interval: number = SpinnerFastInterval;
 
 	private state: SpinnerState = SpinnerState.Stopped;
-	private timer: null | NodeJS.Timer = null;
+	private timer: null | NodeJS.Timeout = null;
 	private currentFrameWritten: boolean = false;
 
 	private stream = process.stderr;
