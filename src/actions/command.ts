@@ -1,3 +1,5 @@
+import * as os from "os";
+
 import { ChildProcess, spawn } from "child_process";
 import * as which from "which";
 
@@ -32,6 +34,8 @@ export interface ProcessExitStatus {
 	signal?: string;
 }
 
+const isWin32 = os.platform() === "win32";
+
 function startPipeline(
 	commands: string[][],
 	options: ProcessActionOptions
@@ -43,10 +47,15 @@ function startPipeline(
 	for (let j = commands.length - 1; j >= 0; j--) {
 		const [cmd, ...args] = commands[j];
 		const realCommand = which.sync(cmd);
+
+		// Amend "shell:true" for CMD/BAT spawns
+		const shellOption = isWin32 && /\.(?:bat|cmd)$/i.test(realCommand) ? { shell: true } : {};
+
 		const p = spawn(realCommand, args, {
 			cwd: options.cwd,
 			env: options.env,
 			stdio: options.interactive ? "inherit" : "pipe",
+			...shellOption,
 		});
 
 		if (options.reporter && !options.interactive) {
