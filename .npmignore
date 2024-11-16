@@ -2,3 +2,5 @@ src
 payloads
 .vscode
 **/*.js.map
+tsconfig.json
+tsconfig.release.json
