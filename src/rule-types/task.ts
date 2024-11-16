@@ -5,9 +5,8 @@ import {
 	GoalMatcher,
 	PreBuildContext,
 	PreBuildResult,
-	Rule
+	Rule,
 } from "../core/interface";
-import { NonPosixifyPatternMatch } from "../match";
 
 import { RuleBase } from "./rule-base";
 import { SinglePlural_T } from "./util";
@@ -45,7 +44,7 @@ export function Task(dir: Director) {
 		task: Object.assign(_task.exact, {
 			glob: _task.glob,
 			group: _task.subPrefix,
-			make: _task.make
-		})
+			make: _task.make,
+		}),
 	};
 }

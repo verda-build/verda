@@ -7,7 +7,7 @@ import {
 	GoalMatcher,
 	PreBuildContext,
 	PreBuildResult,
-	Rule
+	Rule,
 } from "../core/interface";
 
 import { RuleBase } from "./rule-base";
@@ -68,12 +68,12 @@ export function Oracle(dir: Director) {
 		oracle: Object.assign(_oracle.exact, {
 			glob: _oracle.glob,
 			group: _oracle.subPrefix,
-			make: _oracle.make
+			make: _oracle.make,
 		}),
 		computed: Object.assign(_computed.exact, {
 			glob: _computed.glob,
 			group: _computed.subPrefix,
-			make: _computed.make
-		})
+			make: _computed.make,
+		}),
 	};
 }

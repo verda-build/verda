@@ -5,11 +5,9 @@ import {
 	GoalMatcher,
 	PreBuildContext,
 	PreBuildResult,
-	Rule
+	Rule,
 } from "../core/interface";
-import { NonPosixifyPatternMatch } from "../match";
 
-import { GlobMatcher } from "./matchers";
 import { RuleBase } from "./rule-base";
 import { SinglePlural_T } from "./util";
 
@@ -45,7 +43,7 @@ export function Phony(dir: Director) {
 		phony: Object.assign(_phony.exact, {
 			glob: _phony.glob,
 			group: _phony.subPrefix,
-			make: _phony.make
-		})
+			make: _phony.make,
+		}),
 	};
 }
