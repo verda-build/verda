@@ -1,4 +1,4 @@
-import chalk, { ChalkFunction } from "chalk";
+import chalk, { ChalkInstance } from "chalk";
 import * as util from "util";
 
 export interface ActionLogHighlighter {
@@ -55,7 +55,7 @@ export class HighlightedRun {
 		else return String(this.text);
 	}
 
-	private static styleMap: { [style: string]: ChalkFunction | undefined } = Object.create(null, {
+	private static styleMap: { [style: string]: ChalkInstance | undefined } = Object.create(null, {
 		directive: { value: chalk.cyanBright },
 		operator: { value: chalk.cyan },
 		command: { value: chalk.blueBright },

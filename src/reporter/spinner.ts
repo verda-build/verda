@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import * as cliCursor from "cli-cursor";
+import cliCursor from "cli-cursor";
 import * as readline from "readline";
 
 // No idea how to detect whether the console font supports all the characters
